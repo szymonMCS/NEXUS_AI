@@ -2,150 +2,129 @@
 
 Advanced Sports Prediction System powered by LangGraph, MCP, and Claude AI.
 
-## 🌟 Wybierz Swój Tryb
+## 🚀 Features
 
-NEXUS AI oferuje **dwa tryby** działania:
+- **Multi-Sport Support**: Tennis & Basketball predictions
+- **Intelligent Data Aggregation**: News from multiple sources (Brave, Serper, NewsAPI)
+- **Quality-Based Filtering**: Automatic data quality evaluation
+- **Top 3 Ranking System**: Focus on highest value opportunities
+- **MCP Server Architecture**: Modular, scalable design
+- **Real-time Odds Comparison**: Multiple bookmakers (API + optional scraping)
+- **Risk Management**: Kelly Criterion position sizing
+- **LangGraph Orchestration**: Multi-agent workflow
+- **Beautiful UI**: Gradio dashboard with live updates
 
-### 🔹 **Lite Mode** (Domyślny - $0-50/mies)
-**Idealne do: development, testów, użytku osobistego**
+## 💡 Flexible Data Sources
 
-- ✅ **On-demand CLI** - uruchom gdy potrzebujesz
-- ✅ **Darmowe źródła danych** - web scraping + free APIs
-- ✅ **Zero kosztów infrastruktury** - działa lokalnie
-- ✅ **WebDataEvaluator** - inteligentna walidacja danych z internetu
-- ✅ **Proste w użyciu** - jeden plik, jedna komenda
+NEXUS AI supports **two configuration modes**:
 
-**Źródła danych Lite:**
-- TheSportsDB (darmowe API)
-- Sofascore (scraping)
-- Flashscore (scraping)
-- Fortuna/STS/Betclic (scraping)
-- Brave Search + Serper (darmowe limity)
+### 🔸 Standard Mode (Paid APIs)
+- The Odds API ($50-100/month)
+- API-Tennis ($50/month)
+- BetsAPI ($30/month)
+- **Total: ~$150-200/month**
+- Best data quality and reliability
 
-### 🔸 **Pro Mode** ($150-200/mies)
-**Idealne do: produkcji, ciągłego monitoringu, biznesu**
+### 🔹 Lite Mode (Free/Minimal Cost)
+- TheSportsDB (free)
+- Sofascore scraping (free)
+- Flashscore scraping (free)
+- Polish bookies scraping (free)
+- **Total: ~$0-50/month** (only Claude API costs)
+- Good quality with validation
 
-- ✅ **Background service** - działa 24/7
-- ✅ **Płatne API** - The Odds API, API-Tennis, BetsAPI
-- ✅ **MCP Servers** - skalowalna architektura
-- ✅ **LangGraph Agents** - zaawansowana orkiestracja
-- ✅ **Live tracking** - monitoring kursów w czasie rzeczywistym
-- ✅ **PostgreSQL + Redis** - profesjonalna baza danych
+**Switch modes** by setting `APP_MODE=lite` or `APP_MODE=pro` in `.env`
 
-## 🚀 Quick Start (Lite Mode)
+## 📋 Requirements
 
-### 1. Instalacja
+- Python 3.11+
+- Redis (for caching)
+- PostgreSQL (recommended) or SQLite
+- API Keys (see `.env.example`)
 
+## 🛠️ Installation
+
+1. Clone the repository:
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/szymonMCS/NEXUS_AI.git
 cd nexus
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-playwright install chromium  # Dla web scrapingu
 ```
 
-### 2. Konfiguracja
+2. Create virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+playwright install chromium  # If using scraping in Lite mode
+```
+
+4. Set up environment variables:
 ```bash
 cp .env.example .env
-# Edytuj .env i dodaj klucze API:
-# - BRAVE_API_KEY (darmowe 2000 req/mies)
-# - SERPER_API_KEY (darmowe 2500 req/mies)
-# - ANTHROPIC_API_KEY (dla Claude)
+# Edit .env and add your API keys
 ```
 
-### 3. Uruchomienie
+5. Initialize database:
+```bash
+python scripts/init_db.py
+```
+
+## 🚀 Usage
+
+### Run the Gradio UI:
+```bash
+python app.py
+```
+
+### Run the betting floor (headless):
+```bash
+python betting_floor.py
+```
+
+### Run MCP servers:
+```bash
+python scripts/setup_mcp.py
+```
+
+## 📊 Architecture
+
+```
+NEXUS AI
+├── Gradio UI (Dashboard, Top 3, News, History)
+├── LangGraph Orchestrator (Multi-agent workflow)
+│   ├── Supervisor Agent
+│   ├── News Analyst Agent
+│   ├── Data Evaluator Agent
+│   ├── Analyst Agent
+│   ├── Match Ranker Agent
+│   ├── Risk Manager Agent
+│   ├── Decision Maker Agent
+│   └── Bettor Agent
+├── MCP Servers (News, Odds, Tennis, Basketball, Alerts)
+└── Data Sources (Configurable: Paid APIs or Free sources)
+```
+
+## 🔄 Configuration
+
+Edit `.env` to choose your mode:
 
 ```bash
-# Wygeneruj raport dziennych betów dla tenisa
-python nexus.py --sport tennis --date today
+# Standard Mode (Paid APIs)
+APP_MODE=pro
+ODDS_API_KEY=your_key
+API_TENNIS_KEY=your_key
+BETS_API_KEY=your_key
 
-# Dla koszykówki
-python nexus.py --sport basketball --date 2026-01-20
-
-# Zobacz wszystkie opcje
-python nexus.py --help
-```
-
-### 4. Rezultat
-
-System wygeneruje raport w `outputs/raport_2026-01-19_tennis.md` z:
-- ✅ Top 3-5 najlepszych betów
-- ✅ Analiza jakości danych dla każdego meczu
-- ✅ Prawdopodobieństwa i value
-- ✅ Rekomendowane stawki (Kelly Criterion)
-- ✅ Podsumowanie newsów i kontuzji
-
-## 📊 Architektura
-
-```
-┌─────────────────────────────────────────┐
-│         CLI Interface (Lite)            │
-│      lub Gradio UI (Pro opcjonalnie)    │
-└───────────────┬─────────────────────────┘
-                │
-┌───────────────▼─────────────────────────┐
-│     Fixture Collector                   │
-│  (TheSportsDB, Sofascore, Flashscore)   │
-└───────────────┬─────────────────────────┘
-                │
-┌───────────────▼─────────────────────────┐
-│       Data Enricher (parallel)          │
-│  News, Stats, H2H, Odds, Rankings       │
-└───────────────┬─────────────────────────┘
-                │
-┌───────────────▼─────────────────────────┐
-│    WebDataEvaluator (🔑 KLUCZOWY!)     │
-│  Cross-validation, Freshness, Quality   │
-└───────────────┬─────────────────────────┘
-                │
-         [Filter: Quality > 40%]
-                │
-┌───────────────▼─────────────────────────┐
-│      Prediction Engine                  │
-│   Tennis/Basketball Models + Value      │
-└───────────────┬─────────────────────────┘
-                │
-┌───────────────▼─────────────────────────┐
-│   Match Ranker → Select Top 3-5         │
-└───────────────┬─────────────────────────┘
-                │
-┌───────────────▼─────────────────────────┐
-│      Report Generator                   │
-│      outputs/raport_*.md                │
-└─────────────────────────────────────────┘
-```
-
-## 🔄 Przełączanie między Lite a Pro
-
-W pliku `.env` ustaw:
-
-```bash
-# Lite Mode (domyślny)
+# Lite Mode (Free sources)
 APP_MODE=lite
 USE_WEB_SCRAPING=True
 USE_FREE_APIS=True
-
-# Pro Mode
-APP_MODE=pro
-# Dodaj klucze do płatnych API w .env
+# Only Brave/Serper + Anthropic keys needed
 ```
-
-## 📋 Porównanie Trybów
-
-| Aspekt | Lite | Pro |
-|--------|------|-----|
-| **Koszt/miesiąc** | $0-50 | $150-200 |
-| **Tryb działania** | On-demand CLI | Background 24/7 |
-| **Źródła danych** | Scraping + Free APIs | Płatne APIs |
-| **Jakość danych** | Dobra (z validacją) | Bardzo dobra |
-| **Live tracking** | ❌ | ✅ |
-| **Deployment** | Lokalnie | Docker + VPS |
-| **Baza danych** | Brak (cache w pamięci) | PostgreSQL + Redis |
-| **MCP Servers** | ❌ | ✅ |
-| **LangGraph** | ❌ | ✅ |
-| **Idealne dla** | Dev, testy, hobby | Produkcja, biznes |
 
 ## 🧪 Testing
 
@@ -165,31 +144,3 @@ Contributions welcome! Please open an issue first to discuss changes.
 
 This software is for educational purposes only. Sports betting involves risk.
 Please gamble responsibly and within your means.
-
-## 🛠️ Development Roadmap
-
-### ✅ Phase 1: Lite Mode (Obecne)
-- [x] Konfiguracja hybrydowa (Lite/Pro)
-- [ ] Web scrapers (Sofascore, Flashscore, PL bookies)
-- [ ] WebDataEvaluator
-- [ ] Tennis/Basketball models
-- [ ] Report generator
-- [ ] CLI interface
-
-### 🔜 Phase 2: Pro Mode (Opcjonalne)
-- [ ] MCP Servers
-- [ ] LangGraph Agents
-- [ ] PostgreSQL + Redis
-- [ ] Background scheduler
-- [ ] Live odds tracking
-- [ ] Gradio advanced UI
-
-## 📚 Dokumentacja
-
-Szczegółowa dokumentacja dostępna w katalogu `plans/`:
-- `plans/lite/` - Specyfikacja Lite Mode
-- `plans/` - Specyfikacja Pro Mode
-
-## 💡 Wsparcie
-
-Masz pytania? Otwórz [issue](https://github.com/your-repo/issues)!
