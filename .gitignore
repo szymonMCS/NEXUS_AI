@@ -76,3 +76,8 @@ coverage.xml
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Documentation and plans (keep out of repo)
+plans/
+NEXUS_AI_Lite_Specyfikacja.md
+NEXUS_AI_v2_Pelna_Implementacja.md
