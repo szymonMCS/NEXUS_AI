@@ -21,6 +21,7 @@ class Sport(Enum):
     BASKETBALL = "basketball"
     HANDBALL = "handball"
     TABLE_TENNIS = "table_tennis"
+    GREYHOUND = "greyhound"
 
 
 @dataclass

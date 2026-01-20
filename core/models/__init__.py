@@ -7,6 +7,9 @@ Includes:
 - TennisModel: Tennis match prediction (ranking, form, H2H, surface)
 - BasketballModel: Basketball prediction (ratings, rest, home/away)
 - HandicapModel: Handicap/spread predictions for all sports
+- GreyhoundModel: Greyhound racing predictions (SVR/SVM ensemble)
+- HandballModel: Handball predictions (SEL with CMP distribution)
+- TableTennisModel: Table tennis predictions (XGBoost ensemble)
 """
 
 # Base model
@@ -34,6 +37,27 @@ from core.models.handicap_model import (
     find_value_handicap,
 )
 
+# Additional sports models
+from core.models.greyhound_model import (
+    GreyhoundModel,
+    GreyhoundFeatures,
+    RacePrediction,
+    RaceGrade,
+)
+from core.models.handball_model import (
+    HandballModel,
+    HandballFeatures,
+    HandballPrediction,
+    HandballMarket,
+)
+from core.models.table_tennis_model import (
+    TableTennisModel,
+    TableTennisFeatures,
+    TableTennisPrediction,
+    TableTennisFormat,
+    PlayingStyle,
+)
+
 __all__ = [
     # Base
     "BaseModel",
@@ -56,4 +80,20 @@ __all__ = [
     "HalfStats",
     "MarketType",
     "find_value_handicap",
+    # Greyhound
+    "GreyhoundModel",
+    "GreyhoundFeatures",
+    "RacePrediction",
+    "RaceGrade",
+    # Handball
+    "HandballModel",
+    "HandballFeatures",
+    "HandballPrediction",
+    "HandballMarket",
+    # Table Tennis
+    "TableTennisModel",
+    "TableTennisFeatures",
+    "TableTennisPrediction",
+    "TableTennisFormat",
+    "PlayingStyle",
 ]

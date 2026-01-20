@@ -93,8 +93,16 @@ class HandicapResponse(BaseModel):
 app = FastAPI(
     title="NEXUS AI Lite",
     description="Sports Prediction System - REST API",
-    version="2.0.0"
+    version="2.2.0"
 )
+
+# Setup Prometheus metrics
+try:
+    from api.metrics import setup_metrics, set_websocket_connections, set_active_analyses
+    setup_metrics(app, version="2.2.0")
+except ImportError:
+    # prometheus_client not installed
+    pass
 
 # CORS for React frontend
 app.add_middleware(
@@ -355,9 +363,97 @@ async def get_stats() -> Dict[str, Any]:
         "total_profit": 0.0,
         "avg_edge": 0.0,
         "avg_quality": 0.0,
-        "sports_analyzed": ["tennis", "basketball"],
+        "sports_analyzed": ["tennis", "basketball", "greyhound", "handball", "table_tennis"],
         "last_7_days": []
     }
+
+
+@app.get("/api/sports/available")
+async def get_available_sports() -> Dict[str, Any]:
+    """Get list of available sports with their configuration."""
+    return {
+        "sports": [
+            {
+                "id": "tennis",
+                "name": "Tennis",
+                "icon": "🎾",
+                "markets": ["match_winner", "set_handicap", "game_handicap", "total_games"],
+                "models": ["TennisHandicapModel", "TennisEloModel"],
+                "status": "active"
+            },
+            {
+                "id": "basketball",
+                "name": "Basketball",
+                "icon": "🏀",
+                "markets": ["match_winner", "point_spread", "total_points", "first_half"],
+                "models": ["BasketballHandicapModel", "BasketballEloModel"],
+                "status": "active"
+            },
+            {
+                "id": "greyhound",
+                "name": "Greyhound Racing",
+                "icon": "🐕",
+                "markets": ["winner", "place", "forecast", "tricast"],
+                "models": ["GreyhoundPredictor"],
+                "status": "beta"
+            },
+            {
+                "id": "handball",
+                "name": "Handball",
+                "icon": "🤾",
+                "markets": ["match_winner", "handicap", "total_goals"],
+                "models": ["HandballPredictor"],
+                "status": "beta"
+            },
+            {
+                "id": "table_tennis",
+                "name": "Table Tennis",
+                "icon": "🏓",
+                "markets": ["match_winner", "set_handicap", "total_points"],
+                "models": ["TableTennisPredictor"],
+                "status": "beta"
+            }
+        ],
+        "default": "tennis",
+        "total": 5
+    }
+
+
+@app.get("/api/predictions/live")
+async def get_live_predictions() -> Dict[str, Any]:
+    """
+    Get live/in-progress predictions.
+    Returns current analysis state and any live value bets.
+    """
+    live_data = {
+        "is_analyzing": analysis_state["is_running"],
+        "current_step": analysis_state["current_step"],
+        "progress": analysis_state["progress"],
+        "last_update": analysis_state["last_analysis_time"],
+        "live_bets": []
+    }
+
+    # If there's a recent result, include top bets
+    if analysis_state["last_result"]:
+        result = analysis_state["last_result"]
+        live_data["live_bets"] = result.get("value_bets", [])[:3]
+        live_data["sport"] = result.get("sport")
+        live_data["date"] = result.get("date")
+        live_data["matches_analyzed"] = result.get("matches_analyzed", 0)
+
+    return live_data
+
+
+@app.post("/api/predictions/analyze")
+async def analyze_predictions(
+    request: AnalysisRequest,
+    background_tasks: BackgroundTasks
+) -> Dict[str, Any]:
+    """
+    Trigger new prediction analysis.
+    Alternative endpoint to /api/analysis for consistency.
+    """
+    return await run_analysis(request, background_tasks)
 
 
 @app.post("/api/handicap")

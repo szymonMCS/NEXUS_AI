@@ -9,17 +9,18 @@
 
 | Kategoria | Zaimplementowane | Brakujące | Status |
 |-----------|------------------|-----------|--------|
-| Config | 5/5 | 0 | **COMPLETE** |
+| Config | 6/6 | 0 | **COMPLETE** |
 | Data Sources | 12/12 | 0 | **COMPLETE** |
 | MCP Servers | 6/6 | 0 | **COMPLETE** |
 | Agents | 8/8 | 0 | **COMPLETE** |
-| Core/Models | 7/7 | 0 | **COMPLETE** |
+| Core/Models | 10/10 | 0 | **COMPLETE** |
 | **Evaluator** | 4/4 | 0 | **COMPLETE** |
 | **Reports** | 4/4 | 0 | **COMPLETE** |
-| UI/CLI | 5/6 | 1 | **MOSTLY DONE** |
+| UI/CLI | 6/6 | 0 | **COMPLETE** |
 | Database | 3/3 | 0 | **COMPLETE** |
 | Scripts | 4/4 | 0 | **COMPLETE** |
-| Docker | 2/3 | 1 | MOSTLY DONE |
+| Docker | 3/3 | 0 | **COMPLETE** |
+| Monitoring | 4/4 | 0 | **COMPLETE** |
 | Tests | 3/X | X-3 | PARTIAL |
 | Frontend (React) | 10/15+ | 5+ | PARTIAL |
 
@@ -35,6 +36,9 @@
 - [x] `config/settings.py` - Centralna konfiguracja
 - [x] `config/thresholds.py` - Progi jakosci danych
 - [x] `config/leagues.py` - Klasyfikacja lig (popular/medium/unpopular)
+  - **UPDATED 2026-01-20:** Dodano ligi dla greyhound, handball, table_tennis
+  - ALL_LEAGUES dict z wszystkimi sportami
+  - get_supported_sports(), get_leagues_for_sport() helpers
 - [x] `config/free_apis.py` - Konfiguracja darmowych API (Sofascore, TheSportsDB)
 - [x] `config/settings_secure.py` - Bezpieczne ladowanie secrets
 
@@ -167,13 +171,32 @@
   - Portfolio risk calculation
   - Value bet ranking (composite score)
 
+### Nowo zaimplementowane (2026-01-20):
+- [x] `core/models/greyhound_model.py` - **Model Greyhound Racing** (NOWE)
+  - SVR/SVM ensemble for position prediction
+  - Trap bias factors, early pace rating
+  - Trainer form, weight analysis
+  - Race prediction with forecast/tricast
+
+- [x] `core/models/handball_model.py` - **Model Handball SEL** (NOWE)
+  - SEL (Statistically Enhanced Learning) approach
+  - CMP-like distribution for goal modeling
+  - First half / second half analysis
+  - Handicap and total goals markets
+
+- [x] `core/models/table_tennis_model.py` - **Model Table Tennis** (NOWE)
+  - XGBoost/RandomForest/GradientBoosting ensemble logic
+  - Rating, ranking, form, H2H factors
+  - Style matchup matrix (offensive/defensive/chopper)
+  - Set handicap and total points markets
+
 ### Brakujace:
-- Brak - wszystkie kluczowe modele zaimplementowane
+- Brak - wszystkie kluczowe modele zaimplementowane (10/10)
 
 ### UWAGA:
 - Modele statystyczne dzialaja jako fallback/uzupelnienie dla LLM predictions
-- Integracja z AnalystAgent wymaga dodatkowej pracy
-- Kod bazowany na `backend_draft/` (base_predictor, nba_predictor)
+- Nowe sporty: greyhound, handball, table_tennis (beta status)
+- Kod bazowany na `backend_draft/` (base_predictor, nba_predictor, greyhound_predictor, handball_predictor, table_tennis_predictor)
 
 ---
 
@@ -350,9 +373,39 @@
   - Betting configuration
   - Security settings
 
+### Nowo zaimplementowane (2026-01-20):
+- [x] `monitoring/prometheus.yml` - **Konfiguracja Prometheus** (NOWE)
+  - Scrape config dla nexus-api, node-exporter
+  - 15s scrape interval
+  - Lifecycle API enabled
+
+- [x] `monitoring/grafana/` - **Grafana dashboards** (NOWE)
+  - `provisioning/datasources/datasource.yml` - Auto-provisioned Prometheus
+  - `provisioning/dashboards/dashboard.yml` - Dashboard provider
+  - `dashboards/nexus-dashboard.json` - Main dashboard
+    - API metrics (latency, request rate, error rate)
+    - Prediction metrics by sport
+    - Model accuracy tracking
+    - System metrics (CPU, memory)
+    - Value bets and edge metrics
+
+- [x] `api/metrics.py` - **Prometheus metrics module** (NOWE)
+  - HTTP request metrics (counter, histogram)
+  - Prediction metrics (total, confidence)
+  - Value bet metrics (found, edge, Kelly stake)
+  - Model performance metrics (accuracy, inference time)
+  - Data quality metrics
+  - WebSocket connection tracking
+
+- [x] `docker-compose.yml` - **Monitoring stack added** (UPDATED)
+  - prometheus service (port 9090)
+  - grafana service (port 3030)
+  - node-exporter service (port 9100)
+  - New volumes: prometheus_data, grafana_data
+  - Profile: monitoring
+
 ### Brakujace:
-- [ ] `monitoring/prometheus.yml` - Konfiguracja Prometheus
-- [ ] Grafana dashboards
+- Brak - monitoring stack kompletny
 
 ---
 
@@ -520,13 +573,17 @@ export const api = {
 }
 ```
 
-### Backend API Endpoints (do zaimplementowania):
-- [ ] `POST /api/analysis` - Uruchom analize
-- [ ] `GET /api/predictions` - Pobierz predykcje
-- [ ] `GET /api/value-bets` - Pobierz value bets
-- [ ] `GET /api/matches` - Pobierz mecze
-- [ ] `GET /api/status` - Status systemu
-- [ ] `WS /api/ws` - WebSocket dla live updates
+### Backend API Endpoints (ZAIMPLEMENTOWANE):
+- [x] `POST /api/analysis` - Uruchom analize
+- [x] `GET /api/predictions` - Pobierz predykcje
+- [x] `GET /api/value-bets` - Pobierz value bets
+- [x] `GET /api/matches` - Pobierz mecze
+- [x] `GET /api/status` - Status systemu
+- [x] `WS /api/ws` - WebSocket dla live updates
+- [x] `GET /api/sports/available` - Lista dostepnych sportow (NOWE)
+- [x] `GET /api/predictions/live` - Live predictions (NOWE)
+- [x] `POST /api/predictions/analyze` - Uruchom analize (alias) (NOWE)
+- [x] `GET /metrics` - Prometheus metrics (NOWE)
 
 ### Deployment Frontend:
 - [ ] Build production: `npm run build`
