@@ -10,8 +10,8 @@
 | Kategoria | Zaimplementowane | Brakujące | Status |
 |-----------|------------------|-----------|--------|
 | Config | 5/5 | 0 | COMPLETE |
-| Data Sources | 8/12 | 4 | PARTIAL |
-| MCP Servers | 5/6 | 1 | PARTIAL |
+| Data Sources | 12/12 | 0 | **COMPLETE** |
+| MCP Servers | 6/6 | 0 | **COMPLETE** |
 | Agents | 7/8 | 1 | PARTIAL |
 | Core/Models | 7/7 | 0 | **COMPLETE** |
 | UI | 4/5 | 1 | MOSTLY DONE |
@@ -53,22 +53,26 @@
 - [x] `data/tennis/api_tennis_client.py` - API-Tennis client
 - [x] `data/tennis/sofascore_scraper.py` - Sofascore tennis scraper
 
-### Brakujace:
-- [ ] `data/collectors/fixture_collector.py` - **Zbieranie fixtures z wielu zrodel** (Plan Lite 05)
-  - Powinien laczyc TheSportsDB + Sofascore + Flashscore
-  - Deduplikacja i merging meczow
+### Nowo zaimplementowane:
+- [x] `data/collectors/fixture_collector.py` - **Zbieranie fixtures z wielu zrodel** (NOWE)
+  - Laczy TheSportsDB + Sofascore + Flashscore
+  - Deduplikacja via fuzzy matching
+  - Source confidence weighting
+  - Parallel data enrichment
 
-- [ ] `data/collectors/data_enricher.py` - **Wzbogacanie danych** (Plan Lite 05)
-  - Parallel enrichment: stats + odds + news
-  - Rate limiting i error handling
-
-- [ ] `data/scrapers/flashscore_scraper.py` - **Flashscore scraper** (Plan Lite 03)
+- [x] `data/scrapers/flashscore_scraper.py` - **Flashscore scraper** (NOWE)
   - Playwright-based scraping
-  - Fixtures, odds, results
+  - Fixtures, odds, H2H
+  - Supports tennis, basketball, football
 
-- [ ] `data/apis/thesportsdb_client.py` - **TheSportsDB client** (Plan Lite 03)
+- [x] `data/apis/thesportsdb_client.py` - **TheSportsDB client** (NOWE)
   - Darmowe API (key=3)
-  - Fixtures, teams, players
+  - Events by date/league
+  - Team/player search
+  - League standings
+
+### Brakujace:
+- Brak - wszystkie data sources zaimplementowane
 
 ---
 
@@ -80,15 +84,17 @@
 - [x] `mcp_servers/tennis_server.py` - Serwer danych tenisowych
 - [x] `mcp_servers/basketball_server.py` - Serwer danych koszykarskich
 - [x] `mcp_servers/alerts_server.py` - Serwer alertow i notyfikacji
-
-### Brakujace:
-- [ ] `mcp_servers/evaluation_server.py` - **Serwer ewaluacji jakosci** (Plan 06.2)
+- [x] `mcp_servers/evaluation_server.py` - **Serwer ewaluacji jakosci** (NOWE)
   - Tool: `evaluate_data_quality` - pelna ewaluacja meczu
   - Tool: `batch_evaluate_matches` - ewaluacja wielu meczow
   - Tool: `get_quality_recommendation` - rekomendacja na podstawie score
   - Tool: `calculate_adjusted_value` - value z korekta jakosci
-  - Resource: `evaluation://{match_id}/report`
-  - Prompt: evaluation guidelines
+  - Tool: `check_source_agreement` - zgodnosc zrodel
+  - Tool: `generate_quality_report` - raport jakosci
+  - Resource: `evaluation://thresholds`, `evaluation://recommendations`
+
+### Brakujace:
+- Brak - wszystkie MCP serwery zaimplementowane
 
 ---
 
@@ -451,13 +457,13 @@ export const api = {
 1. ~~`core/models/tennis_model.py`~~ - **DONE** - Statystyczne predykcje tenisa
 2. ~~`core/models/basketball_model.py`~~ - **DONE** - Statystyczne predykcje koszykowki
 3. ~~`core/value_calculator.py`~~ - **DONE** - Obliczanie value i Kelly stake
-4. `mcp_servers/evaluation_server.py` - Dedykowany serwer ewaluacji
+4. ~~`mcp_servers/evaluation_server.py`~~ - **DONE** - Dedykowany serwer ewaluacji
 
 ### Sredni priorytet (Data sources):
-5. `data/collectors/fixture_collector.py` - Multi-source fixture collection
-6. `data/collectors/data_enricher.py` - Parallel data enrichment
-7. `data/scrapers/flashscore_scraper.py` - Flashscore scraping
-8. `data/apis/thesportsdb_client.py` - TheSportsDB API
+5. ~~`data/collectors/fixture_collector.py`~~ - **DONE** - Multi-source fixture collection
+6. ~~`data/scrapers/flashscore_scraper.py`~~ - **DONE** - Flashscore scraping
+7. ~~`data/apis/thesportsdb_client.py`~~ - **DONE** - TheSportsDB API
+8. ~~`mcp_servers/evaluation_server.py`~~ - **DONE** - Evaluation server
 
 ### Niski priorytet (Enhancements):
 9. `reports/report_generator.py` - Report generation
