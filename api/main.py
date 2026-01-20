@@ -17,6 +17,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from config.settings import settings
+from core.models import (
+    HandicapModel,
+    TennisHandicapModel,
+    BasketballHandicapModel,
+    MarketType,
+    find_value_handicap,
+)
 
 
 # === PYDANTIC MODELS ===
@@ -58,6 +65,27 @@ class SystemStatus(BaseModel):
     api_keys_configured: Dict[str, bool]
     last_analysis: Optional[str]
     uptime_seconds: float
+
+
+class HandicapRequest(BaseModel):
+    sport: str = "tennis"
+    market_type: str = "match_handicap"  # match_handicap, first_half, total_over, first_half_total
+    home_stats: Dict[str, Any]
+    away_stats: Dict[str, Any]
+    line: float = 0.0
+    bookmaker_odds: Optional[Dict[str, List[float]]] = None  # line -> [home_odds, away_odds]
+
+
+class HandicapResponse(BaseModel):
+    market_type: str
+    line: float
+    cover_probability: float
+    fair_odds: float
+    expected_margin: float
+    confidence: float
+    reasoning: List[str]
+    half_patterns: Optional[Dict[str, Any]] = None
+    value_bets: Optional[List[Dict[str, Any]]] = None
 
 
 # === APP SETUP ===
@@ -326,6 +354,142 @@ async def get_stats() -> Dict[str, Any]:
         "sports_analyzed": ["tennis", "basketball"],
         "last_7_days": []
     }
+
+
+@app.post("/api/handicap")
+async def predict_handicap(request: HandicapRequest) -> HandicapResponse:
+    """
+    Predict handicap/spread outcomes based on statistics.
+
+    Supports:
+    - Tennis: game handicaps, set handicaps, first set winner
+    - Basketball: point spreads, first half spreads, totals
+    - First half/second half analysis
+    """
+    # Select model based on sport
+    if request.sport == "tennis":
+        model = TennisHandicapModel()
+    elif request.sport == "basketball":
+        model = BasketballHandicapModel()
+    else:
+        model = HandicapModel()
+
+    # Parse market type
+    market_type_map = {
+        "match_handicap": MarketType.MATCH_HANDICAP,
+        "first_half": MarketType.FIRST_HALF,
+        "second_half": MarketType.SECOND_HALF,
+        "total_over": MarketType.TOTAL_OVER,
+        "total_under": MarketType.TOTAL_UNDER,
+        "first_half_total": MarketType.FIRST_HALF_TOTAL,
+    }
+    market_type = market_type_map.get(request.market_type, MarketType.MATCH_HANDICAP)
+
+    # Analyze half patterns
+    half_patterns = model.analyze_half_patterns(request.home_stats, request.away_stats)
+    half_patterns_dict = {
+        "first_half": {
+            "avg_scored": half_patterns["first_half"].avg_scored,
+            "avg_conceded": half_patterns["first_half"].avg_conceded,
+            "avg_margin": half_patterns["first_half"].avg_margin,
+        },
+        "second_half": {
+            "avg_scored": half_patterns["second_half"].avg_scored,
+            "avg_conceded": half_patterns["second_half"].avg_conceded,
+            "avg_margin": half_patterns["second_half"].avg_margin,
+        }
+    }
+
+    # Get prediction based on market type
+    if market_type in [MarketType.TOTAL_OVER, MarketType.TOTAL_UNDER, MarketType.FIRST_HALF_TOTAL]:
+        # Total prediction
+        total_pred = model.predict_total(
+            request.home_stats,
+            request.away_stats,
+            request.line,
+            market_type
+        )
+        return HandicapResponse(
+            market_type=request.market_type,
+            line=request.line,
+            cover_probability=total_pred.over_probability if "over" in request.market_type else total_pred.under_probability,
+            fair_odds=round(1 / total_pred.over_probability, 2) if total_pred.over_probability > 0 else 99.99,
+            expected_margin=total_pred.expected_total,
+            confidence=total_pred.confidence,
+            reasoning=total_pred.reasoning,
+            half_patterns=half_patterns_dict,
+            value_bets=None
+        )
+    else:
+        # Handicap prediction
+        prediction = model.predict_handicap(
+            request.home_stats,
+            request.away_stats,
+            request.line,
+            market_type
+        )
+
+        # Find value bets if odds provided
+        value_bets = None
+        if request.bookmaker_odds:
+            odds_dict = {
+                float(k): tuple(v) for k, v in request.bookmaker_odds.items()
+            }
+            value_bets = find_value_handicap(
+                model,
+                request.home_stats,
+                request.away_stats,
+                odds_dict,
+                market_type
+            )
+
+        return HandicapResponse(
+            market_type=request.market_type,
+            line=request.line,
+            cover_probability=prediction.cover_probability,
+            fair_odds=prediction.fair_odds,
+            expected_margin=prediction.expected_margin,
+            confidence=prediction.confidence,
+            reasoning=prediction.reasoning,
+            half_patterns=half_patterns_dict,
+            value_bets=value_bets
+        )
+
+
+@app.get("/api/handicap/markets")
+async def get_handicap_markets(sport: str = "tennis") -> Dict[str, Any]:
+    """Get available handicap markets for a sport."""
+    if sport == "tennis":
+        return {
+            "sport": "tennis",
+            "markets": [
+                {"type": "match_handicap", "name": "Game Handicap", "example_lines": [-4.5, -2.5, 2.5, 4.5]},
+                {"type": "first_half", "name": "First Set Winner", "example_lines": [0]},
+                {"type": "total_over", "name": "Total Games Over", "example_lines": [20.5, 21.5, 22.5]},
+                {"type": "total_under", "name": "Total Games Under", "example_lines": [20.5, 21.5, 22.5]},
+            ]
+        }
+    elif sport == "basketball":
+        return {
+            "sport": "basketball",
+            "markets": [
+                {"type": "match_handicap", "name": "Point Spread", "example_lines": [-10.5, -5.5, -2.5, 2.5, 5.5, 10.5]},
+                {"type": "first_half", "name": "First Half Spread", "example_lines": [-5.5, -2.5, 2.5, 5.5]},
+                {"type": "total_over", "name": "Total Points Over", "example_lines": [210.5, 215.5, 220.5]},
+                {"type": "total_under", "name": "Total Points Under", "example_lines": [210.5, 215.5, 220.5]},
+                {"type": "first_half_total", "name": "First Half Total", "example_lines": [105.5, 108.5, 110.5]},
+            ]
+        }
+    else:
+        return {
+            "sport": sport,
+            "markets": [
+                {"type": "match_handicap", "name": "Match Handicap", "example_lines": [-1.5, -0.5, 0.5, 1.5]},
+                {"type": "first_half", "name": "First Half Result", "example_lines": [0]},
+                {"type": "total_over", "name": "Total Over", "example_lines": [2.5]},
+                {"type": "total_under", "name": "Total Under", "example_lines": [2.5]},
+            ]
+        }
 
 
 # === WEBSOCKET ENDPOINT ===

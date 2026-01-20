@@ -57,6 +57,59 @@ export interface SystemStats {
   last_7_days: Array<{ date: string; profit: number }>;
 }
 
+// Handicap types
+export interface HalfStats {
+  avg_scored: number;
+  avg_conceded: number;
+  avg_margin: number;
+}
+
+export interface HandicapRequest {
+  sport: 'tennis' | 'basketball' | string;
+  market_type: 'match_handicap' | 'first_half' | 'second_half' | 'total_over' | 'total_under' | 'first_half_total';
+  home_stats: Record<string, unknown>;
+  away_stats: Record<string, unknown>;
+  line: number;
+  bookmaker_odds?: Record<string, [number, number]>;
+}
+
+export interface HandicapValueBet {
+  line: number;
+  side: 'home' | 'away';
+  odds: number;
+  fair_odds: number;
+  probability: number;
+  edge: number;
+  confidence: number;
+  reasoning: string[];
+}
+
+export interface HandicapResponse {
+  market_type: string;
+  line: number;
+  cover_probability: number;
+  fair_odds: number;
+  expected_margin: number;
+  confidence: number;
+  reasoning: string[];
+  half_patterns: {
+    first_half: HalfStats;
+    second_half: HalfStats;
+  } | null;
+  value_bets: HandicapValueBet[] | null;
+}
+
+export interface HandicapMarket {
+  type: string;
+  name: string;
+  example_lines: number[];
+}
+
+export interface HandicapMarketsResponse {
+  sport: string;
+  markets: HandicapMarket[];
+}
+
 // WebSocket connection
 let ws: WebSocket | null = null;
 type ProgressCallback = (data: {
@@ -121,6 +174,26 @@ export const api = {
 
     const res = await fetch(`${API_BASE}/api/matches?${params}`);
     if (!res.ok) throw new Error('Failed to get matches');
+    return res.json();
+  },
+
+  // Handicap predictions
+  async predictHandicap(request: HandicapRequest): Promise<HandicapResponse> {
+    const res = await fetch(`${API_BASE}/api/handicap`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.detail || 'Handicap prediction failed');
+    }
+    return res.json();
+  },
+
+  async getHandicapMarkets(sport: string): Promise<HandicapMarketsResponse> {
+    const res = await fetch(`${API_BASE}/api/handicap/markets?sport=${sport}`);
+    if (!res.ok) throw new Error('Failed to get handicap markets');
     return res.json();
   },
 
