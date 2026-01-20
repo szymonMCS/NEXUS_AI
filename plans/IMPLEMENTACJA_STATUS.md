@@ -1,7 +1,7 @@
 # NEXUS AI - Status Implementacji vs Plany
 
-**Data przeglądu:** 2026-01-20
-**Wersja:** 2.1.0
+**Data przeglądu:** 2026-01-20 (updated)
+**Wersja:** 2.2.0
 
 ---
 
@@ -12,13 +12,13 @@
 | Config | 5/5 | 0 | COMPLETE |
 | Data Sources | 12/12 | 0 | **COMPLETE** |
 | MCP Servers | 6/6 | 0 | **COMPLETE** |
-| Agents | 7/8 | 1 | PARTIAL |
+| Agents | 8/8 | 0 | **COMPLETE** |
 | Core/Models | 7/7 | 0 | **COMPLETE** |
 | UI | 4/5 | 1 | MOSTLY DONE |
 | Database | 3/3 | 0 | COMPLETE |
-| Scripts | 0/4 | 4 | TODO |
-| Docker | 0/3 | 3 | TODO |
-| Tests | 0/X | X | TODO |
+| Scripts | 4/4 | 0 | **COMPLETE** |
+| Docker | 2/3 | 1 | **MOSTLY DONE** |
+| Tests | 3/X | X-3 | **PARTIAL** |
 | **Frontend (React)** | 10/15+ | 5+ | PARTIAL |
 
 ---
@@ -109,15 +109,17 @@
 - [x] `agents/risk_manager.py` - Agent zarzadzania ryzykiem (Kelly)
 - [x] `agents/decision_maker.py` - Agent finalnej decyzji
 
-### Brakujace:
-- [ ] `agents/bettor.py` - **BettorAgent** (Plan 10)
-  - Automatyczne stawianie zakladow (opcjonalne)
-  - Integracja z API bukmacherow
-  - Tracking postawionych zakladow
+### Nowo zaimplementowane:
+- [x] `agents/bettor.py` - **BettorAgent** (NOWE)
+  - Automatyczne stawianie zakladow (simulation mode by default)
+  - BetStatus enum dla cyklu zycia zakladu
+  - PlacedBet i BettingSession dataclasses
+  - Kelly Criterion stake calculation
+  - Session stats i bet history tracking
+  - Export bets (dict/csv/json)
 
-### UWAGA:
-- Plan 01 wymienia BettorAgent jako oddzielny agent
-- Funkcjonalnosc moze byc w DecisionMaker, ale nie ma `place_bet()`
+### Brakujace:
+- Brak - wszystkie agenci zaimplementowani
 
 ---
 
@@ -254,20 +256,57 @@
 
 ## 10. SCRIPTS (Plan 11)
 
+### Zaimplementowane:
+- [x] `scripts/setup_mcp.py` - **Setup MCP servers** (NOWE)
+  - Weryfikacja i uruchamianie MCP servers
+  - Generowanie konfiguracji dla Claude Desktop
+  - --check-only, --mode, --show-config opcje
+
+- [x] `scripts/init_db.py` - **Inicjalizacja bazy danych** (NOWE)
+  - PostgreSQL schema z wszystkimi tabelami
+  - Views dla active_value_bets i recent_performance
+  - --reset, --seed, --verify-only opcje
+
+- [x] `scripts/backtest.py` - **Backtesting framework** (NOWE)
+  - Symulacja na danych historycznych
+  - Kelly Criterion stake sizing
+  - ROI, Sharpe ratio, max drawdown metrics
+  - --model, --start, --end, --bankroll opcje
+
+- [x] `scripts/run_daily.py` - **Daily execution pipeline** (NOWE)
+  - Kompletny pipeline analizy
+  - Multi-step: fixtures -> data -> quality -> predictions -> value -> recommendations
+  - --sport, --mode, --dry-run opcje
+
 ### Brakujace:
-- [ ] `scripts/setup_mcp.py` - Setup MCP servers
-- [ ] `scripts/init_db.py` - Inicjalizacja bazy danych
-- [ ] `scripts/backtest.py` - Backtesting framework
-- [ ] `scripts/run_daily.py` - Daily cron job
+- Brak - wszystkie skrypty zaimplementowane
 
 ---
 
 ## 11. DOCKER / DEPLOYMENT (Plan 11)
 
+### Zaimplementowane:
+- [x] `Dockerfile` - **Multi-stage Dockerfile** (NOWE)
+  - Stage: builder - build dependencies
+  - Stage: production - optimized runtime
+  - Stage: development - hot-reload
+  - Stage: mcp - MCP servers
+
+- [x] `docker-compose.yml` - **Orchestracja kontenerow** (NOWE)
+  - postgres: PostgreSQL 15
+  - redis: Redis 7 cache
+  - api: FastAPI backend
+  - frontend: React frontend
+  - mcp-*: MCP servers (sofascore, odds, news, evaluation)
+  - scheduler: Daily jobs
+  - dev profile: adminer, redisinsight
+
+- [x] `.env.example` - **Environment template** (UPDATED)
+  - Docker configuration
+  - Betting configuration
+  - Security settings
+
 ### Brakujace:
-- [ ] `docker-compose.yml` - Orchestracja kontenerow
-- [ ] `docker/Dockerfile` - Glowny Dockerfile
-- [ ] `docker/Dockerfile.mcp` - Dockerfile dla MCP servers
 - [ ] `monitoring/prometheus.yml` - Konfiguracja Prometheus
 - [ ] Grafana dashboards
 
@@ -275,10 +314,33 @@
 
 ## 12. TESTS
 
+### Zaimplementowane:
+- [x] `tests/conftest.py` - **Pytest configuration** (NOWE)
+  - Shared fixtures dla models, agents, state
+  - Mock external services (Anthropic, httpx, playwright)
+  - Environment setup
+
+- [x] `tests/test_models.py` - **Model tests** (NOWE)
+  - TestTennisModel: predictions, factors, validation
+  - TestBasketballModel: ratings, rest, home advantage
+  - TestValueCalculator: edge, kelly, quality adjustment
+  - TestBaseModel: ELO probability, reliability
+
+- [x] `tests/test_agents.py` - **Agent tests** (NOWE)
+  - TestBettorAgent: process, settle, session
+  - TestBettingSession: stats, win rate
+  - TestBetStatus: enum values
+  - Helper function tests
+
+- [x] `tests/test_data.py` - **Data collection tests** (NOWE)
+  - TestTheSportsDBClient: API, rate limiting
+  - TestFixtureCollector: sources, dedup, normalization
+  - TestFlashscoreScraper: parsing, odds
+  - TestSourceConfidence: scoring
+
 ### Brakujace:
 - [ ] `tests/test_news_aggregator.py`
 - [ ] `tests/test_data_evaluator.py`
-- [ ] `tests/test_value_calculator.py`
 - [ ] `tests/test_ranker.py`
 - [ ] `tests/test_mcp_servers.py`
 - [ ] `tests/integration/test_full_pipeline.py`
@@ -486,7 +548,7 @@ export const api = {
 
 ### 3. BettorAgent
 - **Plan:** Oddzielny agent do stawiania zakladow
-- **Rzeczywistosc:** Brak - funkcjonalnosc czesciowo w decision_maker
+- **Rzeczywistosc:** **DONE** - `agents/bettor.py` zaimplementowany z simulation mode
 
 ### 4. Lite Mode Structure
 - **Plan Lite:** Oddzielna struktura z evaluator/, prediction/, ranking/, reports/

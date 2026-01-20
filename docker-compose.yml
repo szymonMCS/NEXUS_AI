@@ -1,0 +1,275 @@
+# NEXUS AI Docker Compose Configuration
+# Usage:
+#   docker-compose up -d              # Start all services
+#   docker-compose up -d api          # Start only API
+#   docker-compose --profile dev up   # Start with dev services
+#   docker-compose logs -f api        # View API logs
+
+version: '3.8'
+
+services:
+  # ==========================
+  # Database
+  # ==========================
+  postgres:
+    image: postgres:15-alpine
+    container_name: nexus-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nexus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexus_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-nexus}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexus}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexus-network
+
+  # ==========================
+  # Redis Cache
+  # ==========================
+  redis:
+    image: redis:7-alpine
+    container_name: nexus-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexus-network
+
+  # ==========================
+  # FastAPI Backend
+  # ==========================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: nexus-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-nexus}:${POSTGRES_PASSWORD:-nexus_secret}@postgres:5432/${POSTGRES_DB:-nexus}
+      - REDIS_URL=redis://redis:6379/0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - NEXUS_MODE=${NEXUS_MODE:-lite}
+      - NEXUS_ENV=production
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - nexus-network
+
+  # ==========================
+  # React Frontend
+  # ==========================
+  frontend:
+    build:
+      context: ./frontend/app
+      dockerfile: Dockerfile
+    container_name: nexus-frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      - VITE_API_URL=http://api:8000
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    networks:
+      - nexus-network
+
+  # ==========================
+  # MCP Servers
+  # ==========================
+  mcp-sofascore:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: mcp
+    container_name: nexus-mcp-sofascore
+    restart: unless-stopped
+    command: python -m mcp_servers.sofascore_server
+    environment:
+      - NEXUS_MODE=${NEXUS_MODE:-lite}
+    ports:
+      - "8100:8100"
+    networks:
+      - nexus-network
+
+  mcp-odds:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: mcp
+    container_name: nexus-mcp-odds
+    restart: unless-stopped
+    command: python -m mcp_servers.odds_server
+    environment:
+      - NEXUS_MODE=${NEXUS_MODE:-lite}
+    ports:
+      - "8101:8101"
+    networks:
+      - nexus-network
+
+  mcp-news:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: mcp
+    container_name: nexus-mcp-news
+    restart: unless-stopped
+    command: python -m mcp_servers.news_server
+    ports:
+      - "8102:8102"
+    networks:
+      - nexus-network
+
+  mcp-evaluation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: mcp
+    container_name: nexus-mcp-evaluation
+    restart: unless-stopped
+    command: python -m mcp_servers.evaluation_server
+    ports:
+      - "8103:8103"
+    networks:
+      - nexus-network
+
+  # ==========================
+  # Scheduler (Daily Jobs)
+  # ==========================
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: nexus-scheduler
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-nexus}:${POSTGRES_PASSWORD:-nexus_secret}@postgres:5432/${POSTGRES_DB:-nexus}
+      - REDIS_URL=redis://redis:6379/0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - NEXUS_MODE=${NEXUS_MODE:-lite}
+    command: >
+      sh -c "
+        while true; do
+          echo 'Running daily analysis...'
+          python -m scripts.run_daily --sport tennis --mode ${NEXUS_MODE:-lite} --output /app/logs/daily_tennis.json
+          python -m scripts.run_daily --sport basketball --mode ${NEXUS_MODE:-lite} --output /app/logs/daily_basketball.json
+          echo 'Sleeping until next run...'
+          sleep 86400
+        done
+      "
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - nexus-network
+    profiles:
+      - scheduler
+
+  # ==========================
+  # Development Services
+  # ==========================
+  api-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: nexus-api-dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-nexus}:${POSTGRES_PASSWORD:-nexus_secret}@postgres:5432/${POSTGRES_DB:-nexus}
+      - REDIS_URL=redis://redis:6379/0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - NEXUS_MODE=${NEXUS_MODE:-lite}
+      - NEXUS_ENV=development
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - .:/app
+      - /app/__pycache__
+    networks:
+      - nexus-network
+    profiles:
+      - dev
+
+  # Adminer (DB management)
+  adminer:
+    image: adminer:latest
+    container_name: nexus-adminer
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    networks:
+      - nexus-network
+    profiles:
+      - dev
+
+  # RedisInsight (Redis GUI)
+  redisinsight:
+    image: redislabs/redisinsight:latest
+    container_name: nexus-redisinsight
+    restart: unless-stopped
+    depends_on:
+      - redis
+    ports:
+      - "8001:8001"
+    networks:
+      - nexus-network
+    profiles:
+      - dev
+
+# ==========================
+# Volumes
+# ==========================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ==========================
+# Networks
+# ==========================
+networks:
+  nexus-network:
+    driver: bridge

@@ -10,6 +10,7 @@ Agent Pipeline:
 5. Ranker - Ranks matches by value potential
 6. Risk Manager - Calculates stakes using Kelly Criterion
 7. Decision Maker - Makes final betting decisions
+8. Bettor - Executes betting decisions (optional)
 """
 
 from agents.supervisor import (
@@ -48,6 +49,14 @@ from agents.decision_maker import (
     make_betting_decisions,
 )
 
+from agents.bettor import (
+    BettorAgent,
+    BetStatus,
+    PlacedBet,
+    BettingSession,
+    place_bets,
+)
+
 __all__ = [
     # Supervisor
     "SupervisorAgent",
@@ -71,4 +80,10 @@ __all__ = [
     # Decision Maker
     "DecisionMakerAgent",
     "make_betting_decisions",
+    # Bettor
+    "BettorAgent",
+    "BetStatus",
+    "PlacedBet",
+    "BettingSession",
+    "place_bets",
 ]
