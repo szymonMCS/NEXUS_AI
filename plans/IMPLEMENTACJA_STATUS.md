@@ -9,17 +9,19 @@
 
 | Kategoria | Zaimplementowane | Brakujące | Status |
 |-----------|------------------|-----------|--------|
-| Config | 5/5 | 0 | COMPLETE |
+| Config | 5/5 | 0 | **COMPLETE** |
 | Data Sources | 12/12 | 0 | **COMPLETE** |
 | MCP Servers | 6/6 | 0 | **COMPLETE** |
 | Agents | 8/8 | 0 | **COMPLETE** |
 | Core/Models | 7/7 | 0 | **COMPLETE** |
-| UI | 4/5 | 1 | MOSTLY DONE |
-| Database | 3/3 | 0 | COMPLETE |
+| **Evaluator** | 4/4 | 0 | **COMPLETE** |
+| **Reports** | 4/4 | 0 | **COMPLETE** |
+| UI/CLI | 5/6 | 1 | **MOSTLY DONE** |
+| Database | 3/3 | 0 | **COMPLETE** |
 | Scripts | 4/4 | 0 | **COMPLETE** |
-| Docker | 2/3 | 1 | **MOSTLY DONE** |
-| Tests | 3/X | X-3 | **PARTIAL** |
-| **Frontend (React)** | 10/15+ | 5+ | PARTIAL |
+| Docker | 2/3 | 1 | MOSTLY DONE |
+| Tests | 3/X | X-3 | PARTIAL |
+| Frontend (React) | 10/15+ | 5+ | PARTIAL |
 
 ---
 
@@ -181,15 +183,35 @@
 - [x] `agents/data_evaluator.py` - DataEvaluator (podstawowa wersja)
 - [x] `core/quality_scorer.py` - QualityScorer
 
-### Brakujace elementy w istniejacych plikach:
-- [ ] **WebDataEvaluator** (Plan Lite 06) - specyficzny dla danych web:
+### Nowo zaimplementowane:
+- [x] **WebDataEvaluator** (Plan Lite 06) - specyficzny dla danych web:
   - Source agreement check (35% wagi)
   - Freshness check z parsowaniem dat
   - Cross-validation miedzy zrodlami
   - Odds variance calculation
 
-- [ ] `evaluator/source_agreement.py` - **Sprawdzanie zgodnosci zrodel** (Plan Lite 04)
-- [ ] `evaluator/freshness_checker.py` - **Sprawdzanie swiezosci danych** (Plan Lite 04)
+- [x] `evaluator/source_agreement.py` - **Sprawdzanie zgodnosci zrodel** (NOWE)
+  - SourceAgreementChecker z variance/std_dev analysis
+  - AgreementLevel enum (strong/moderate/weak/none)
+  - Weighted consensus calculation
+  - Outlier detection (z-score based)
+  - Cross-validation between sources
+
+- [x] `evaluator/freshness_checker.py` - **Sprawdzanie swiezosci danych** (NOWE)
+  - FreshnessChecker z intelligent date parsing
+  - Multiple date formats support (ISO, EU, US, relative)
+  - Relative time parsing ("5 minutes ago", "yesterday")
+  - FreshnessLevel enum (live/very_fresh/fresh/recent/stale/outdated)
+  - Configurable thresholds per data type
+
+- [x] `evaluator/web_evaluator.py` - **WebDataEvaluator** (NOWE)
+  - Combines all evaluation components
+  - Component weights: source_agreement (35%), freshness (30%), cross_validation (20%), odds_variance (15%)
+  - WebDataQuality enum (excellent/good/moderate/poor/insufficient)
+  - Comprehensive recommendations and issues detection
+
+### Brakujace:
+- Brak - modul evaluator kompletny
 
 ---
 
@@ -207,17 +229,23 @@
 ### USUNIETE:
 - ~~`app.py`~~ - Gradio UI (zastapione przez FastAPI + React)
 
+### Nowo zaimplementowane:
+- [x] `nexus.py` - **CLI entry point** (ROZSZERZONY)
+  - argparse z opcjami: --sport, --date, --min-quality, --top, --quiet, --format, --evaluate
+  - Async run_analysis() z fallback mode
+  - run_evaluation() dla standalone quality check
+  - Progress output z emoji i step tracking
+  - Server mode (--server) dla FastAPI
+  - Multiple output formats (md, html, json)
+  - Version flag (--version)
+  - print_banner() i print_step() helpers
+
 ### Brakujace:
 - [ ] `ui/top3_tab.py` - **Dedykowana zakladka Top 3** (Plan 09.1)
   - HTML cards z gradientem Gold/Silver/Bronze
   - Detailed table z wszystkimi meczami
   - Quality reports accordion
   - Real-time status updates
-
-- [ ] `nexus.py` - **CLI entry point** (Plan Lite 09)
-  - argparse z opcjami: --sport, --date, --min-quality, --top, --quiet
-  - Async run_analysis()
-  - Progress output z emoji
 
 ### UWAGA:
 - Obecny `app.py` jest funkcjonalny, ale mniej rozbudowany niz plan
@@ -240,17 +268,33 @@
 ## 9. REPORTS (Plan Lite 08)
 
 ### Zaimplementowane:
-- Podstawowe raportowanie w `app.py`
-
-### Brakujace:
-- [ ] `reports/report_generator.py` - **Generator raportow** (Plan Lite 08)
+- [x] `reports/report_generator.py` - **Generator raportow** (ROZSZERZONY)
   - Markdown report generation
-  - HTML report generation
+  - HTML report generation with modern styling
+  - JSON report generation for API use
   - No-bets report template
   - save_report() do plikow
+  - TemplateEngine z simple Jinja-like syntax
+  - RankedBet i ReportContext dataclasses
+  - Quality report generation
+  - Portfolio risk assessment
+  - Correlation warnings
 
-- [ ] `reports/templates/report_template.md` - Szablon MD
-- [ ] `reports/templates/report_template.html` - Szablon HTML
+- [x] `reports/templates/report_template.md` - **Szablon MD** (NOWE)
+  - Full featured Markdown template
+  - Summary tables
+  - Factor breakdown
+  - Risk assessment section
+
+- [x] `reports/templates/report_template.html` - **Szablon HTML** (NOWE)
+  - Modern dark theme design
+  - Responsive grid layout
+  - Gold/Silver/Bronze ranking cards
+  - Quality breakdown table
+  - Print-friendly styles
+
+### Brakujace:
+- Brak - modul reports kompletny
 
 ---
 

@@ -3,6 +3,16 @@
 Report generation for NEXUS AI.
 """
 
-from reports.report_generator import ReportGenerator
+from reports.report_generator import (
+    ReportGenerator,
+    RankedBet,
+    ReportContext,
+    TemplateEngine,
+)
 
-__all__ = ["ReportGenerator"]
+__all__ = [
+    "ReportGenerator",
+    "RankedBet",
+    "ReportContext",
+    "TemplateEngine",
+]

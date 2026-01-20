@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS AI Report - {{ sport }} {{ date }}</title>
+    <style>
+        :root {
+            --primary: #00d9ff;
+            --secondary: #00ff88;
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+            --bronze: #CD7F32;
+            --bg-dark: #1a1a2e;
+            --bg-card: rgba(255,255,255,0.05);
+            --text-main: #ffffff;
+            --text-muted: #888888;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #16213e 50%, #0f3460 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .meta-info {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            background: var(--bg-card);
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .summary-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .summary-card .value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .summary-card .label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Section Headers */
+        .section-header {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary);
+            display: inline-block;
+        }
+
+        /* Bet Cards */
+        .bets-container {
+            margin-bottom: 3rem;
+        }
+
+        .bet-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .bet-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .bet-card.rank-1 { border-left: 4px solid var(--gold); }
+        .bet-card.rank-2 { border-left: 4px solid var(--silver); }
+        .bet-card.rank-3 { border-left: 4px solid var(--bronze); }
+
+        .bet-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .bet-rank {
+            font-size: 2.5rem;
+            font-weight: 800;
+            opacity: 0.3;
+        }
+
+        .rank-1 .bet-rank { color: var(--gold); opacity: 1; }
+        .rank-2 .bet-rank { color: var(--silver); opacity: 1; }
+        .rank-3 .bet-rank { color: var(--bronze); opacity: 1; }
+
+        .bet-title {
+            flex: 1;
+            margin: 0 1.5rem;
+        }
+
+        .bet-title h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .bet-league {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .bet-time {
+            background: rgba(0,217,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .bet-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .stat-value.edge { color: var(--secondary); }
+        .stat-value.quality { color: var(--primary); }
+
+        .bet-analysis {
+            padding: 0 1.5rem 1.5rem;
+        }
+
+        .analysis-section {
+            margin-bottom: 1rem;
+        }
+
+        .analysis-title {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .analysis-list {
+            list-style: none;
+        }
+
+        .analysis-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .analysis-list li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+        }
+
+        .warning-list li:before {
+            content: "⚠";
+            color: #ff6b6b;
+        }
+
+        .bet-action {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bet-action .stake {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--bg-dark);
+        }
+
+        .bet-action .bookmaker {
+            color: var(--bg-dark);
+            opacity: 0.8;
+        }
+
+        /* Quality Section */
+        .quality-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+
+        .quality-table th,
+        .quality-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .quality-table th {
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        .status-good { color: var(--secondary); }
+        .status-warning { color: #ffc107; }
+        .status-bad { color: #ff6b6b; }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 3rem;
+        }
+
+        .disclaimer {
+            max-width: 600px;
+            margin: 1rem auto 0;
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .logo { font-size: 2rem; }
+            .bet-header { flex-direction: column; gap: 1rem; }
+            .bet-rank { position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; }
+            .bet-stats { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* Print styles */
+        @media print {
+            body { background: white; color: black; }
+            .bet-card { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">NEXUS AI</div>
+            <p class="subtitle">AI-Powered Sports Betting Intelligence</p>
+            <div class="meta-info">
+                <span class="meta-item">{{ sport }}</span>
+                <span class="meta-item">{{ date }}</span>
+                <span class="meta-item">Generated: {{ generated_at }}</span>
+            </div>
+        </header>
+
+        <section class="summary-grid">
+            <div class="summary-card">
+                <div class="value">{{ bet_count }}</div>
+                <div class="label">Value Bets</div>
+            </div>
+            <div class="summary-card">
+                <div class="value">{{ avg_edge }}</div>
+                <div class="label">Avg Edge</div>
+            </div>
+            <div class="summary-card">
+                <div class="value">{{ avg_quality }}</div>
+                <div class="label">Avg Quality</div>
+            </div>
+            <div class="summary-card">
+                <div class="value">{{ total_stake }}</div>
+                <div class="label">Total Stake</div>
+            </div>
+        </section>
+
+        <section class="bets-container">
+            <h2 class="section-header">Top Value Bets</h2>
+
+            {% for bet in bets %}
+            <div class="bet-card rank-{{ bet.rank }}">
+                <div class="bet-header">
+                    <span class="bet-rank">#{{ bet.rank }}</span>
+                    <div class="bet-title">
+                        <h3>{{ bet.match_name }}</h3>
+                        <span class="bet-league">{{ bet.league }}</span>
+                    </div>
+                    <span class="bet-time">{{ bet.match_time }}</span>
+                </div>
+
+                <div class="bet-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Selection</span>
+                        <span class="stat-value">{{ bet.selection }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Odds</span>
+                        <span class="stat-value">{{ bet.odds }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Edge</span>
+                        <span class="stat-value edge">+{{ bet.edge }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Quality</span>
+                        <span class="stat-value quality">{{ bet.quality_score }}/100</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Confidence</span>
+                        <span class="stat-value">{{ bet.confidence }}</span>
+                    </div>
+                </div>
+
+                {% if bet.reasoning %}
+                <div class="bet-analysis">
+                    <div class="analysis-section">
+                        <div class="analysis-title">Analysis</div>
+                        <ul class="analysis-list">
+                            {% for r in bet.reasoning %}
+                            <li>{{ r }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    {% if bet.warnings %}
+                    <div class="analysis-section">
+                        <div class="analysis-title">Warnings</div>
+                        <ul class="analysis-list warning-list">
+                            {% for w in bet.warnings %}
+                            <li>{{ w }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="bet-action">
+                    <div>
+                        <span class="stake">{{ bet.stake_recommendation }}</span>
+                        <span class="bookmaker">@ {{ bet.bookmaker }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </section>
+
+        {% if quality_details %}
+        <section>
+            <h2 class="section-header">Data Quality Breakdown</h2>
+            <table class="quality-table">
+                <thead>
+                    <tr>
+                        <th>Source</th>
+                        <th>Score</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for source in quality_details %}
+                    <tr>
+                        <td>{{ source.name }}</td>
+                        <td>{{ source.score }}/100</td>
+                        <td class="status-{{ source.status_class }}">{{ source.status }}</td>
+                        <td>{{ source.last_updated }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% endif %}
+
+        <footer>
+            <p>Report generated by NEXUS AI v2.2.0</p>
+            <p class="disclaimer">
+                Disclaimer: Betting involves risk. Past performance does not guarantee future results.
+                Always bet responsibly and within your means. This report is for informational purposes only.
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

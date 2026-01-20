@@ -1,13 +1,19 @@
 # reports/report_generator.py
 """
-Report generator for NEXUS AI Lite.
+Report generator for NEXUS AI.
 Generates Markdown and HTML reports from analysis results.
+Supports templates and multiple report types.
 """
 
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import re
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -25,20 +31,412 @@ class RankedBet:
     confidence: float
     reasoning: List[str]
     warnings: List[str] = None
+    match_time: str = ""
+    factors: List[Dict[str, Any]] = None
 
     def __post_init__(self):
         if self.warnings is None:
             self.warnings = []
+        if self.factors is None:
+            self.factors = []
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "rank": self.rank,
+            "match_name": self.match_name,
+            "league": self.league,
+            "selection": self.selection,
+            "odds": self.odds,
+            "bookmaker": self.bookmaker,
+            "edge": f"{self.edge:.1%}",
+            "quality_score": self.quality_score,
+            "stake_recommendation": self.stake_recommendation,
+            "confidence": f"{self.confidence:.0%}",
+            "reasoning": self.reasoning,
+            "warnings": self.warnings,
+            "match_time": self.match_time,
+            "factors": self.factors,
+        }
+
+
+@dataclass
+class ReportContext:
+    """Context data for report generation."""
+    sport: str
+    date: str
+    bets: List[Union[Dict[str, Any], RankedBet]]
+    generated_at: str = ""
+    bet_count: int = 0
+    avg_edge: str = "0%"
+    avg_quality: str = "0"
+    total_stake: str = "0%"
+    quality_details: List[Dict[str, Any]] = field(default_factory=list)
+    data_sources: List[Dict[str, Any]] = field(default_factory=list)
+    portfolio_risk: str = "Low"
+    max_single_bet: str = "5%"
+    correlation_warning: str = "None"
+
+    def __post_init__(self):
+        if not self.generated_at:
+            self.generated_at = datetime.now().strftime('%Y-%m-%d %H:%M')
+        if not self.bet_count:
+            self.bet_count = len(self.bets)
+
+
+class TemplateEngine:
+    """Simple template engine for report generation."""
+
+    def __init__(self, templates_dir: Optional[Path] = None):
+        self.templates_dir = templates_dir or Path(__file__).parent / "templates"
+
+    def render(self, template_name: str, context: Dict[str, Any]) -> str:
+        """
+        Render a template with given context.
+
+        Args:
+            template_name: Name of template file
+            context: Dictionary of variables
+
+        Returns:
+            Rendered template string
+        """
+        template_path = self.templates_dir / template_name
+
+        if not template_path.exists():
+            logger.warning(f"Template {template_name} not found, using inline generation")
+            return None
+
+        with open(template_path, "r", encoding="utf-8") as f:
+            template = f.read()
+
+        return self._process_template(template, context)
+
+    def _process_template(self, template: str, context: Dict[str, Any]) -> str:
+        """Process template with simple variable substitution and loops."""
+        result = template
+
+        # Process for loops: {% for item in items %}...{% endfor %}
+        for_pattern = r'\{% for (\w+) in (\w+) %\}(.*?)\{% endfor %\}'
+
+        def replace_for(match):
+            item_name = match.group(1)
+            list_name = match.group(2)
+            block = match.group(3)
+
+            items = context.get(list_name, [])
+            if not items:
+                return ""
+
+            rendered_blocks = []
+            for item in items:
+                block_context = {**context, item_name: item}
+                rendered = self._substitute_variables(block, block_context)
+                rendered_blocks.append(rendered)
+
+            return "".join(rendered_blocks)
+
+        result = re.sub(for_pattern, replace_for, result, flags=re.DOTALL)
+
+        # Process conditionals: {% if condition %}...{% endif %}
+        if_pattern = r'\{% if (\w+(?:\.\w+)*) %\}(.*?)\{% endif %\}'
+
+        def replace_if(match):
+            condition_path = match.group(1)
+            block = match.group(2)
+
+            value = self._get_nested_value(context, condition_path)
+            if value:
+                return self._substitute_variables(block, context)
+            return ""
+
+        result = re.sub(if_pattern, replace_if, result, flags=re.DOTALL)
+
+        # Process simple variables: {{ variable }}
+        result = self._substitute_variables(result, context)
+
+        return result
+
+    def _substitute_variables(self, template: str, context: Dict[str, Any]) -> str:
+        """Substitute {{ variable }} patterns."""
+        var_pattern = r'\{\{\s*(\w+(?:\.\w+)*)\s*\}\}'
+
+        def replace_var(match):
+            path = match.group(1)
+            value = self._get_nested_value(context, path)
+            if value is None:
+                return ""
+            return str(value)
+
+        return re.sub(var_pattern, replace_var, template)
+
+    def _get_nested_value(self, context: Dict[str, Any], path: str) -> Any:
+        """Get nested value from context using dot notation."""
+        parts = path.split(".")
+        value = context
+
+        for part in parts:
+            if isinstance(value, dict):
+                value = value.get(part)
+            elif hasattr(value, part):
+                value = getattr(value, part)
+            else:
+                return None
+
+            if value is None:
+                return None
+
+        return value
 
 
 class ReportGenerator:
     """
     Generates reports in Markdown and HTML formats.
+    Supports template-based generation and multiple report types.
     """
 
-    def __init__(self, output_dir: str = "outputs"):
+    def __init__(self, output_dir: str = "outputs", templates_dir: Optional[Path] = None):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
+        self.template_engine = TemplateEngine(templates_dir)
+
+    def generate_report(
+        self,
+        bets: List[Union[Dict[str, Any], RankedBet]],
+        sport: str,
+        date: str,
+        format: str = "md",
+        use_template: bool = True,
+        quality_details: Optional[List[Dict[str, Any]]] = None,
+        data_sources: Optional[List[Dict[str, Any]]] = None,
+    ) -> str:
+        """
+        Generate report using templates or inline generation.
+
+        Args:
+            bets: List of bet dictionaries or RankedBet objects
+            sport: Sport name
+            date: Analysis date
+            format: "md" or "html"
+            use_template: Whether to use template files
+            quality_details: Optional quality breakdown data
+            data_sources: Optional data sources info
+
+        Returns:
+            Generated report content
+        """
+        # Build context
+        context = self._build_context(
+            bets, sport, date, quality_details, data_sources
+        )
+
+        if use_template:
+            template_name = f"report_template.{format}"
+            rendered = self.template_engine.render(template_name, context)
+            if rendered:
+                return rendered
+
+        # Fallback to inline generation
+        if format == "html":
+            return self.generate_html(bets, sport, date)
+        else:
+            return self.generate_markdown(bets, sport, date)
+
+    def _build_context(
+        self,
+        bets: List[Union[Dict[str, Any], RankedBet]],
+        sport: str,
+        date: str,
+        quality_details: Optional[List[Dict[str, Any]]] = None,
+        data_sources: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        """Build template context from bets data."""
+        # Convert bets to dicts
+        bet_dicts = []
+        for bet in bets:
+            if isinstance(bet, RankedBet):
+                bet_dicts.append(bet.to_dict())
+            else:
+                bet_dicts.append(self._normalize_bet_dict(bet))
+
+        # Calculate aggregates
+        if bets:
+            avg_edge = sum(
+                (b.get("edge", 0) if isinstance(b, dict) else b.edge)
+                for b in bets
+            ) / len(bets)
+            avg_quality = sum(
+                (b.get("quality_score", 0) if isinstance(b, dict) else b.quality_score)
+                for b in bets
+            ) / len(bets)
+        else:
+            avg_edge = 0
+            avg_quality = 0
+
+        return {
+            "sport": sport.upper(),
+            "date": date,
+            "generated_at": datetime.now().strftime('%Y-%m-%d %H:%M'),
+            "bets": bet_dicts,
+            "bet_count": len(bets),
+            "avg_edge": f"{avg_edge:.1%}",
+            "avg_quality": f"{avg_quality:.0f}",
+            "total_stake": self._calculate_total_stake(bets),
+            "quality_details": quality_details or [],
+            "data_sources": data_sources or [],
+            "portfolio_risk": self._assess_portfolio_risk(bets),
+            "max_single_bet": "5%",
+            "correlation_warning": self._check_correlations(bets),
+        }
+
+    def _normalize_bet_dict(self, bet: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalize a bet dictionary to standard format."""
+        edge = bet.get("edge", 0)
+        confidence = bet.get("confidence", 0)
+
+        return {
+            "rank": bet.get("rank", 0),
+            "match_name": bet.get("match_name", bet.get("match", "Unknown")),
+            "league": bet.get("league", "Unknown"),
+            "selection": bet.get("selection", "").upper(),
+            "odds": bet.get("odds", 0),
+            "bookmaker": bet.get("bookmaker", ""),
+            "edge": f"+{edge:.1%}" if isinstance(edge, float) else edge,
+            "quality_score": bet.get("quality_score", 0),
+            "stake_recommendation": bet.get("stake_recommendation", bet.get("stake", "1%")),
+            "confidence": f"{confidence:.0%}" if isinstance(confidence, float) else confidence,
+            "reasoning": bet.get("reasoning", []),
+            "warnings": bet.get("warnings", []),
+            "match_time": bet.get("match_time", bet.get("time", "")),
+            "factors": bet.get("factors", []),
+        }
+
+    def _calculate_total_stake(self, bets: List[Union[Dict[str, Any], RankedBet]]) -> str:
+        """Calculate total recommended stake."""
+        total = 0.0
+        for bet in bets:
+            if isinstance(bet, RankedBet):
+                stake_str = bet.stake_recommendation
+            else:
+                stake_str = bet.get("stake_recommendation", bet.get("stake", "0%"))
+
+            # Parse stake percentage
+            try:
+                stake_val = float(stake_str.rstrip("%"))
+                total += stake_val
+            except (ValueError, AttributeError):
+                pass
+
+        return f"{total:.1f}%"
+
+    def _assess_portfolio_risk(self, bets: List[Union[Dict[str, Any], RankedBet]]) -> str:
+        """Assess overall portfolio risk level."""
+        if not bets:
+            return "None"
+
+        total_stake = float(self._calculate_total_stake(bets).rstrip("%"))
+
+        if total_stake > 15:
+            return "High"
+        elif total_stake > 10:
+            return "Medium"
+        else:
+            return "Low"
+
+    def _check_correlations(self, bets: List[Union[Dict[str, Any], RankedBet]]) -> str:
+        """Check for correlated bets (same league/tournament)."""
+        leagues = []
+        for bet in bets:
+            if isinstance(bet, RankedBet):
+                leagues.append(bet.league)
+            else:
+                leagues.append(bet.get("league", ""))
+
+        # Check for duplicates
+        unique_leagues = set(leagues)
+        if len(unique_leagues) < len(leagues):
+            duplicates = [l for l in unique_leagues if leagues.count(l) > 1]
+            return f"Multiple bets in: {', '.join(duplicates)}"
+
+        return "None"
+
+    def generate_json_report(
+        self,
+        bets: List[Union[Dict[str, Any], RankedBet]],
+        sport: str,
+        date: str,
+    ) -> str:
+        """Generate JSON report for API/programmatic use."""
+        context = self._build_context(bets, sport, date)
+        return json.dumps(context, indent=2, default=str)
+
+    def generate_quality_report(
+        self,
+        match_id: str,
+        match_name: str,
+        quality_components: Dict[str, float],
+        issues: List[str],
+    ) -> str:
+        """Generate a detailed quality report for a single match."""
+        overall = quality_components.get("overall_score", 0)
+
+        # Determine quality level
+        if overall >= 0.85:
+            level = "EXCELLENT"
+            recommendation = "Full confidence - proceed with standard stake"
+        elif overall >= 0.70:
+            level = "GOOD"
+            recommendation = "Good quality - standard betting recommended"
+        elif overall >= 0.50:
+            level = "MODERATE"
+            recommendation = "Moderate quality - consider reduced stake"
+        elif overall >= 0.30:
+            level = "HIGH RISK"
+            recommendation = "High risk - minimal bet or skip"
+        else:
+            level = "INSUFFICIENT"
+            recommendation = "Insufficient data - do not bet"
+
+        lines = [
+            f"# Quality Report: {match_name}",
+            f"",
+            f"**Match ID:** {match_id}",
+            f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            f"",
+            f"---",
+            f"",
+            f"## Quality Scores",
+            f"",
+            f"| Component | Score |",
+            f"|-----------|-------|",
+            f"| News Quality | {quality_components.get('news_score', 0):.1%} |",
+            f"| Odds Quality | {quality_components.get('odds_score', 0):.1%} |",
+            f"| Stats Quality | {quality_components.get('stats_score', 0):.1%} |",
+            f"| **Overall** | **{overall:.1%}** |",
+            f"",
+            f"## Assessment",
+            f"",
+            f"**Quality Level:** {level}",
+            f"",
+            f"**Recommendation:** {recommendation}",
+            f"",
+        ]
+
+        if issues:
+            lines.extend([
+                f"## Issues Identified",
+                f"",
+            ])
+            for issue in issues:
+                lines.append(f"- {issue}")
+            lines.append("")
+
+        lines.extend([
+            f"---",
+            f"",
+            f"*Report generated by NEXUS AI v2.2.0*",
+        ])
+
+        return "\n".join(lines)
 
     def generate_markdown(
         self,
