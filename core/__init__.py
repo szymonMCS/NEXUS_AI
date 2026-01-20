@@ -7,11 +7,25 @@ Includes:
 - Quality scoring
 - Prediction models
 - Value calculation
+- Ensemble management
+- Monitoring
 """
 
 from core.state import NexusState
 from core.quality_scorer import QualityScorer
 from core.value_calculator import ValueCalculator, ValueBet, LeagueType
+from core.ensemble import (
+    EnsembleManager,
+    EnsemblePrediction,
+    EnsembleMethod,
+    get_ensemble_manager,
+)
+from core.monitoring import (
+    MonitoringService,
+    PredictionLog,
+    PerformanceMetrics,
+    get_monitoring_service,
+)
 
 # Re-export models
 from core.models import (
@@ -36,6 +50,16 @@ __all__ = [
     "ValueCalculator",
     "ValueBet",
     "LeagueType",
+    # Ensemble
+    "EnsembleManager",
+    "EnsemblePrediction",
+    "EnsembleMethod",
+    "get_ensemble_manager",
+    # Monitoring
+    "MonitoringService",
+    "PredictionLog",
+    "PerformanceMetrics",
+    "get_monitoring_service",
     # Models
     "BaseModel",
     "PredictionResult",

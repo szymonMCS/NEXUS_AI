@@ -105,6 +105,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register additional routers (ensemble, monitoring, admin)
+from api.routers import register_routers
+register_routers(app)
+
 # Store for active WebSocket connections
 active_connections: List[WebSocket] = []
 

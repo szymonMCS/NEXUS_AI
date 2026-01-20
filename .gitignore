@@ -81,3 +81,7 @@ dmypy.json
 plans/
 NEXUS_AI_Lite_Specyfikacja.md
 NEXUS_AI_v2_Pelna_Implementacja.md
+
+# Resource folders (drafts and templates)
+backend_draft/
+frontend/
