@@ -337,10 +337,10 @@ async def get_value_bets() -> List[Dict[str, Any]]:
 @app.get("/api/matches")
 async def get_matches(
     sport: str = "tennis",
-    date: Optional[str] = None
+    match_date: Optional[str] = None
 ) -> Dict[str, Any]:
     """Get matches for a given sport and date."""
-    target_date = date or str(date.today())
+    target_date = match_date or str(date.today())
 
     # This would call the fixture collector
     # For now, return placeholder

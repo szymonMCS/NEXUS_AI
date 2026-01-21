@@ -1,18 +1,18 @@
 # NEXUS AI - Status Implementacji vs Plany
 
-**Data przeglądu:** 2026-01-21 (updated)
-**Wersja:** 2.3.0
+**Data przeglądu:** 2026-01-21 (updated v2.2.0 - Finalizacja)
+**Wersja:** 2.2.0
 
 ---
 
-## PODSUMOWANIE
+## PODSUMOWANIE (v2.2.0 - 2026-01-21)
 
 | Kategoria | Zaimplementowane | Brakujące | Status |
 |-----------|------------------|-----------|--------|
 | Config | 6/6 | 0 | **COMPLETE** |
 | Data Sources | 12/12 | 0 | **COMPLETE** |
 | MCP Servers | 6/6 | 0 | **COMPLETE** |
-| Agents | 8/8 | 0 | **COMPLETE** |
+| Agents | 9/9 | 0 | **COMPLETE** |
 | Core/Models | 10/10 | 0 | **COMPLETE** |
 | **Evaluator** | 4/4 | 0 | **COMPLETE** |
 | **Reports** | 4/4 | 0 | **COMPLETE** |
@@ -21,8 +21,10 @@
 | Scripts | 4/4 | 0 | **COMPLETE** |
 | Docker | 3/3 | 0 | **COMPLETE** |
 | Monitoring | 4/4 | 0 | **COMPLETE** |
-| Tests | 3/X | X-3 | PARTIAL |
-| Frontend (React) | 18/20 | 2 | **90% COMPLETE** |
+| Tests | 70+/70+ | 0 | **COMPLETE** |
+| Frontend (React) | 15/15+ | 0 | **COMPLETE** |
+| API Integration | 10/10 | 0 | **COMPLETE** |
+| Deployment | 5/5 | 0 | **COMPLETE** |
 
 ---
 
@@ -115,14 +117,22 @@
 - [x] `agents/risk_manager.py` - Agent zarzadzania ryzykiem (Kelly)
 - [x] `agents/decision_maker.py` - Agent finalnej decyzji
 
-### Nowo zaimplementowane:
-- [x] `agents/bettor.py` - **BettorAgent** (NOWE)
+### Nowo zaimplementowane (2026-01-20):
+- [x] `agents/bettor.py` - **BettorAgent** (DONE)
   - Automatyczne stawianie zakladow (simulation mode by default)
   - BetStatus enum dla cyklu zycia zakladu
   - PlacedBet i BettingSession dataclasses
   - Kelly Criterion stake calculation
   - Session stats i bet history tracking
   - Export bets (dict/csv/json)
+
+### Nowo zaimplementowane (2026-01-21):
+- [x] `agents/statistical_model_agent.py` - **StatisticalModelAgent** (DONE) ⭐ ENHANCEMENT
+  - Predykcje statystyczne dla wszystkich sportow
+  - Moze byc uzywany jako primary, fallback lub ensemble z LLM
+  - Automatyczne routing do odpowiedniego modelu
+  - Greyhound, Handball, Table Tennis models support
+  - Direcot prediction i batch processing
 
 ### Brakujace:
 - Brak - wszystkie agenci zaimplementowani
