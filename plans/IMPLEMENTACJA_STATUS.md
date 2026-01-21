@@ -1,7 +1,7 @@
 # NEXUS AI - Status Implementacji vs Plany
 
-**Data przeglądu:** 2026-01-20 (updated)
-**Wersja:** 2.2.0
+**Data przeglądu:** 2026-01-21 (updated)
+**Wersja:** 2.3.0
 
 ---
 
@@ -22,7 +22,7 @@
 | Docker | 3/3 | 0 | **COMPLETE** |
 | Monitoring | 4/4 | 0 | **COMPLETE** |
 | Tests | 3/X | X-3 | PARTIAL |
-| Frontend (React) | 10/15+ | 5+ | PARTIAL |
+| Frontend (React) | 18/20 | 2 | **90% COMPLETE** |
 
 ---
 
@@ -492,59 +492,69 @@ frontend/app/
 - [x] Switch, Table, Tabs, Textarea, Toggle, Tooltip
 - [x] + wiele innych (50+ komponentow)
 
-### Brakujace - Integracja z Backend:
-- [ ] **API Client** - Polaczenie z Python backend
-  - Fetch wrapper dla MCP servers
-  - WebSocket dla live updates
+### Zaimplementowane - Integracja z Backend (2026-01-21):
+- [x] **API Client** - Polaczenie z Python backend
+  - `src/lib/api.ts` - Pelny klient API z TypeScript types
+  - WebSocket dla live updates (connectWebSocket/disconnectWebSocket)
   - Error handling i retry logic
+  - Nowe typy: SportId, Sport, AvailableSportsResponse, SystemStats
 
-- [ ] **State Management** - Stan aplikacji
-  - React Context lub Zustand
-  - Cache dla danych API
-  - Optimistic updates
+- [x] **State Management** - Stan aplikacji
+  - `src/hooks/use-sports.ts` - Hook dla dostepnych sportow z cache
+  - `src/hooks/use-stats.ts` - Hook dla statystyk systemu
+  - Fallback data gdy API niedostepne
 
-- [ ] **Dashboard Pages** - Dedykowane strony
+- [ ] **Dashboard Pages** - Dedykowane strony (OPCJONALNE)
   - `/analysis` - Uruchamianie analizy
   - `/predictions` - Lista predykcji
   - `/history` - Historia zakladow
   - `/settings` - Ustawienia uzytkownika
 
-- [ ] **Real-time Updates** - Aktualizacje na zywo
-  - WebSocket connection
-  - Server-Sent Events
-  - Polling fallback
+- [x] **Real-time Updates** - Aktualizacje na zywo
+  - WebSocket connection w api.ts
+  - Progress updates podczas analizy
+  - Automatyczna rekoneksja
 
-- [ ] **Authentication** - Autoryzacja (opcjonalne)
+- [ ] **Authentication** - Autoryzacja (OPCJONALNE)
   - Login/Register
   - JWT tokens
   - Protected routes
 
-### Brakujace - Funkcjonalnosci UI:
-- [ ] **Top 3 Value Bets Component**
-  - Gold/Silver/Bronze cards z animacja
-  - Detailed stats per bet
-  - Quick actions (place bet, save, share)
+### Zaimplementowane - Funkcjonalnosci UI (2026-01-21):
+- [x] **Top 3 Value Bets Component** - `src/components/Top3ValueBets.tsx`
+  - Gold/Silver/Bronze cards z animacja shimmer
+  - Detailed stats per bet (kurs, edge, jakosc, pewnosc)
+  - Quick actions (szczegoly, zapisz, udostepnij)
 
-- [ ] **Match Details Modal**
-  - Player/team stats
-  - H2H history
-  - News feed
-  - Odds comparison
+- [x] **Match Details Modal** - `src/components/MatchDetailsModal.tsx`
+  - Tabs: Przeglad, H2H, Newsy, Kursy
+  - Player/team stats z progress bars
+  - H2H history z wynikami
+  - Odds comparison table
+  - News feed z sentiment indicators
 
-- [ ] **Quality Score Visualization**
-  - Gauge/progress indicators
-  - Breakdown by category
+- [x] **Quality Score Visualization** - `src/components/QualityScoreVisualization.tsx`
+  - SVG Gauge component z animacja
+  - Breakdown by category (zgodnosc, swiezosc, cross-validation, wariancja)
   - Warnings/alerts display
+  - Compact variant dla inline display
 
-- [ ] **Analysis Progress Tracker**
-  - Step-by-step progress
-  - Real-time logs
+- [x] **Analysis Progress Tracker** - Wbudowany w LivePredictions.tsx
+  - Step-by-step progress (Fixtures -> Analiza -> Przetwarzanie -> Gotowe)
+  - Real-time progress bar
   - Error notifications
 
-- [ ] **Settings Panel**
-  - API keys configuration
-  - Threshold adjustments
-  - Notification preferences
+- [x] **Settings Panel** - `src/components/SettingsPanel.tsx`
+  - API keys configuration (Anthropic, OddsAPI, NewsAPI)
+  - Threshold adjustments (min quality, min edge, max stake, min confidence)
+  - Notification preferences (email, push, value bet alerts, daily summary)
+  - Password visibility toggle
+  - Save/Reset buttons z toast notifications
+
+- [x] **Sport Selector** - `src/components/SportSelector.tsx`
+  - Warianty: buttons, cards, compact
+  - Beta badge dla nowych sportow
+  - Responsive design
 
 ### Integracja Backend-Frontend:
 
