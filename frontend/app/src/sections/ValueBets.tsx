@@ -1,16 +1,20 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Trophy, TrendingUp, Clock, ArrowRight, CheckCircle, RefreshCw, AlertCircle } from 'lucide-react';
-import api, { ValueBet, formatEdge, getQualityColor, getRankColor } from '@/lib/api';
+import { Trophy, TrendingUp, ArrowRight, CheckCircle, RefreshCw, AlertCircle } from 'lucide-react';
+import api, { formatEdge, getQualityColor, getRankColor } from '@/lib/api';
+import type { ValueBet, SportId } from '@/lib/api';
+import { useSports } from '@/hooks/use-sports';
 
 export function ValueBets() {
   const [isVisible, setIsVisible] = useState(false);
   const [valueBets, setValueBets] = useState<ValueBet[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSport, setSelectedSport] = useState<SportId | 'all'>('all');
   const sectionRef = useRef<HTMLElement>(null);
+  const { sports } = useSports();
 
   // Fetch value bets on mount
   useEffect(() => {
@@ -91,6 +95,24 @@ export function ValueBets() {
     }
   };
 
+  // Filter bets by selected sport
+  const filteredBets = useMemo(() => {
+    if (selectedSport === 'all') return valueBets;
+    // Simple filtering based on league names containing sport keywords
+    const sportKeywords: Record<SportId, string[]> = {
+      tennis: ['ATP', 'WTA', 'Open', 'Grand Slam', 'Wimbledon', 'Roland Garros'],
+      basketball: ['NBA', 'Euroleague', 'Basketball', 'NCAA'],
+      greyhound: ['Greyhound', 'Racing', 'Dog'],
+      handball: ['Handball', 'EHF', 'Champions League Handball'],
+      table_tennis: ['Table Tennis', 'ITTF', 'Ping Pong'],
+    };
+    const keywords = sportKeywords[selectedSport] || [];
+    return valueBets.filter(bet =>
+      keywords.some(kw => bet.league.toLowerCase().includes(kw.toLowerCase())) ||
+      (bet as any).sport === selectedSport
+    );
+  }, [valueBets, selectedSport]);
+
   return (
     <section ref={sectionRef} id="value-bets" className="py-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -121,26 +143,50 @@ export function ValueBets() {
             </p>
           </div>
           <div
-            className={`flex items-center gap-4 transition-all duration-700 delay-300 ${
+            className={`flex flex-col sm:flex-row items-end gap-4 transition-all duration-700 delay-300 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
           >
-            <div className="text-right">
-              <div className="text-2xl font-bold text-white">{valueBets.length}</div>
-              <div className="text-sm text-gray-400">value bets</div>
+            {/* Sport Filter */}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={selectedSport === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedSport('all')}
+                className={selectedSport === 'all' ? 'bg-gradient-primary' : 'bg-white/5 border-white/10 text-white'}
+              >
+                Wszystkie
+              </Button>
+              {sports.map((s) => (
+                <Button
+                  key={s.id}
+                  variant={selectedSport === s.id ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedSport(s.id)}
+                  className={selectedSport === s.id ? 'bg-gradient-primary' : 'bg-white/5 border-white/10 text-white'}
+                >
+                  {s.icon} {s.name}
+                </Button>
+              ))}
             </div>
-            <Button
-              onClick={fetchValueBets}
-              disabled={loading}
-              className="bg-gradient-primary hover:opacity-90 text-white whitespace-nowrap"
-            >
-              {loading ? (
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4 mr-2" />
-              )}
-              Odśwież
-            </Button>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">{filteredBets.length}</div>
+                <div className="text-sm text-gray-400">value bets</div>
+              </div>
+              <Button
+                onClick={fetchValueBets}
+                disabled={loading}
+                className="bg-gradient-primary hover:opacity-90 text-white whitespace-nowrap"
+              >
+                {loading ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
+                Odśwież
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -154,7 +200,7 @@ export function ValueBets() {
 
         {/* Value Bets Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {valueBets.map((bet, index) => (
+          {filteredBets.map((bet, index) => (
             <Card
               key={`${bet.match}-${bet.rank}`}
               className={`bg-glass-card border-white/5 overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:border-violet-500/30 ${
@@ -236,7 +282,7 @@ export function ValueBets() {
         </div>
 
         {/* Empty State */}
-        {valueBets.length === 0 && !loading && (
+        {filteredBets.length === 0 && !loading && (
           <div className="text-center py-12">
             <Trophy className="w-12 h-12 text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">Brak value bets</h3>
@@ -254,7 +300,7 @@ export function ValueBets() {
         )}
 
         {/* Run Analysis CTA */}
-        {valueBets.length > 0 && (
+        {filteredBets.length > 0 && (
           <div
             className={`text-center transition-all duration-700 delay-500 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'

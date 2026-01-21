@@ -4,8 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart3, Clock, Activity, Play, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { BarChart3, Activity, Play, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '@/lib/api';
+import type { SportId } from '@/lib/api';
+import { useSports } from '@/hooks/use-sports';
 
 interface ProgressState {
   step: string;
@@ -15,7 +17,8 @@ interface ProgressState {
 
 export function LivePredictions() {
   const [isVisible, setIsVisible] = useState(false);
-  const [sport, setSport] = useState<'tennis' | 'basketball'>('tennis');
+  const { loading: sportsLoading, activeSports, betaSports } = useSports();
+  const [sport, setSport] = useState<SportId>('tennis');
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progressState, setProgressState] = useState<ProgressState | null>(null);
@@ -48,7 +51,7 @@ export function LivePredictions() {
 
     try {
       // Connect WebSocket for progress updates
-      const ws = api.connectWebSocket((data) => {
+      api.connectWebSocket((data) => {
         if (data.type === 'progress') {
           setProgressState({
             step: data.step,
@@ -131,13 +134,35 @@ export function LivePredictions() {
               {/* Sport Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">Sport</label>
-                <Select value={sport} onValueChange={(v) => setSport(v as 'tennis' | 'basketball')}>
+                <Select value={sport} onValueChange={(v) => setSport(v as SportId)} disabled={sportsLoading}>
                   <SelectTrigger className="bg-white/5 border-white/10 text-white">
                     <SelectValue placeholder="Wybierz sport" />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-900 border-white/10">
-                    <SelectItem value="tennis">🎾 Tenis</SelectItem>
-                    <SelectItem value="basketball">🏀 Koszykówka</SelectItem>
+                    {/* Active sports */}
+                    {activeSports.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.icon} {s.name}
+                      </SelectItem>
+                    ))}
+                    {/* Beta sports with badge */}
+                    {betaSports.length > 0 && (
+                      <>
+                        <div className="px-2 py-1.5 text-xs text-gray-500 border-t border-white/10 mt-1">
+                          Beta
+                        </div>
+                        {betaSports.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            <span className="flex items-center gap-2">
+                              {s.icon} {s.name}
+                              <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-violet-500/20 text-violet-300">
+                                BETA
+                              </Badge>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

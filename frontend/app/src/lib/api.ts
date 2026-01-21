@@ -6,9 +6,27 @@
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+// Sport types
+export type SportId = 'tennis' | 'basketball' | 'greyhound' | 'handball' | 'table_tennis';
+
+export interface Sport {
+  id: SportId;
+  name: string;
+  icon: string;
+  markets: string[];
+  models: string[];
+  status: 'active' | 'beta' | 'coming_soon';
+}
+
+export interface AvailableSportsResponse {
+  sports: Sport[];
+  default: SportId;
+  total: number;
+}
+
 // Types
 export interface AnalysisRequest {
-  sport: 'tennis' | 'basketball';
+  sport: SportId;
   date?: string;
   min_quality?: number;
   top_n?: number;
@@ -174,6 +192,29 @@ export const api = {
 
     const res = await fetch(`${API_BASE}/api/matches?${params}`);
     if (!res.ok) throw new Error('Failed to get matches');
+    return res.json();
+  },
+
+  // Available Sports
+  async getAvailableSports(): Promise<AvailableSportsResponse> {
+    const res = await fetch(`${API_BASE}/api/sports/available`);
+    if (!res.ok) throw new Error('Failed to get available sports');
+    return res.json();
+  },
+
+  // Live Predictions
+  async getLivePredictions(): Promise<{
+    is_analyzing: boolean;
+    current_step: string | null;
+    progress: number;
+    last_update: string | null;
+    live_bets: ValueBet[];
+    sport?: string;
+    date?: string;
+    matches_analyzed?: number;
+  }> {
+    const res = await fetch(`${API_BASE}/api/predictions/live`);
+    if (!res.ok) throw new Error('Failed to get live predictions');
     return res.json();
   },
 
