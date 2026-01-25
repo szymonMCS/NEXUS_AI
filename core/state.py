@@ -4,7 +4,7 @@ Pydantic state models for LangGraph workflow.
 These models define the shared state passed between agents.
 """
 
-from typing import List, Dict, Optional, Literal
+from typing import List, Dict, Optional, Literal, Any
 from pydantic import BaseModel, Field
 from datetime import datetime
 from enum import Enum
@@ -155,6 +155,9 @@ class NexusState(BaseModel):
     # Bankroll management
     current_bankroll: float = 1000.0
     max_stake_per_bet: float = 50.0
+
+    # Betting session
+    betting_session: Optional[Dict[str, Any]] = None
 
     # Metadata
     started_at: datetime = Field(default_factory=datetime.now)

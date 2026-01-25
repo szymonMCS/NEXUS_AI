@@ -18,7 +18,11 @@
       "WebFetch(domain:www.sports-ai.dev)",
       "WebSearch",
       "Bash(npm install)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "WebFetch(domain:nerdytips.com)",
+      "Bash(python -m pytest:*)",
+      "Bash(npm install:*)",
+      "Bash(git status:*)"
     ]
   }
 }

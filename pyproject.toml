@@ -142,9 +142,7 @@ disallow_untyped_defs = false
 check_untyped_defs = false
 ignore_missing_imports = true
 plugins = ["pydantic.mypy"]
-
-[tool.mypy.config_files]
-mypy.ini
+mypy_config_file = "mypy.ini"
 
 [tool.ruff]
 line-length = 100

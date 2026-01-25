@@ -238,6 +238,16 @@ export const api = {
     return res.json();
   },
 
+  // Match Details
+  async getMatchDetails(matchId: string): Promise<MatchDetailsResponse> {
+    const res = await fetch(`${API_BASE}/api/match/${encodeURIComponent(matchId)}`);
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ detail: 'Failed to get match details' }));
+      throw new Error(error.detail || 'Failed to get match details');
+    }
+    return res.json();
+  },
+
   // WebSocket
   connectWebSocket(onProgress: ProgressCallback): WebSocket {
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -279,6 +289,60 @@ export const api = {
     }
   },
 };
+
+// Match Details types
+export interface MatchDetailsResponse {
+  match: string;
+  match_id: string;
+  league: string;
+  sport: SportId;
+  match_time: string;
+  home_team: {
+    name: string;
+    stats: Record<string, unknown>;
+  };
+  away_team: {
+    name: string;
+    stats: Record<string, unknown>;
+  };
+  value_bet: {
+    selection: string;
+    selection_name: string;
+    probability: number;
+    odds: number;
+    fair_odds: number;
+    edge: number;
+    confidence: number;
+    quality_score: number;
+    bookmaker: string;
+    stake_recommendation: string;
+    kelly_stake: number;
+  };
+  ai_analysis: {
+    summary: string;
+    reasoning: string[];
+    key_factors: Array<{
+      factor: string;
+      impact: 'high' | 'medium' | 'low';
+      description: string;
+    }>;
+    warnings: string[];
+    confidence_breakdown: {
+      data_quality: number;
+      model_agreement: number;
+      market_efficiency: number;
+    };
+  };
+  data_quality: {
+    overall: number;
+    components: Array<{
+      name: string;
+      score: number;
+      description: string;
+    }>;
+  };
+  timestamp: string;
+}
 
 // Hooks helper
 export function formatEdge(edge: number): string {

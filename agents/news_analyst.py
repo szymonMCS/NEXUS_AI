@@ -7,10 +7,10 @@ import asyncio
 from typing import List, Dict, Optional
 from datetime import datetime
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from config.settings import settings
+from config.llm_config import get_llm
 from core.state import (
     NexusState, Match, NewsArticle, PlayerStats,
     Sport, add_message
@@ -34,11 +34,7 @@ class NewsAnalystAgent:
 
     def __init__(self, model_name: str = None):
         self.model_name = model_name or settings.MODEL_NAME
-        self.llm = ChatAnthropic(
-            model=self.model_name,
-            api_key=settings.ANTHROPIC_API_KEY,
-            temperature=0.1
-        )
+        self.llm = get_llm(model_name=self.model_name, temperature=0.1)
         self.aggregator = NewsAggregator()
         self.validator = NewsSourceValidator()
         self.injury_extractor = InjuryExtractor()

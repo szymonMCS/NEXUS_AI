@@ -14,8 +14,6 @@ from enum import Enum
 import asyncio
 import logging
 
-from langchain_anthropic import ChatAnthropic
-
 from config.settings import settings
 from core.state import NexusState, Match, BetDecision, add_message
 
@@ -281,7 +279,7 @@ class BettorAgent:
             stake=stake,
             odds=value_bet.odds,
             bookmaker=self.default_bookmaker,
-            predicted_probability=value_bet.probability,
+            predicted_probability=value_bet.true_probability,
             edge=value_bet.edge,
             confidence=match.prediction.confidence if match.prediction else 0,
             quality_score=match.data_quality.overall_score if match.data_quality else 0

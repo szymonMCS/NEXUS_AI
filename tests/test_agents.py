@@ -20,16 +20,16 @@ class TestBettorAgent:
     @pytest.fixture
     def sample_state(self):
         """Create sample NexusState with approved bets."""
-        from core.state import NexusState, Match, Player, ValueBet, Prediction
+        from core.state import NexusState, Match, PlayerStats, ValueBet, PredictionResult, Sport
 
         # Create players
-        home_player = Player(name="Djokovic N.", ranking=1)
-        away_player = Player(name="Sinner J.", ranking=4)
+        home_player = PlayerStats(name="Djokovic N.", ranking=1, win_rate=0.85)
+        away_player = PlayerStats(name="Sinner J.", ranking=4, win_rate=0.80)
 
         # Create prediction
-        prediction = Prediction(
-            home_probability=0.65,
-            away_probability=0.35,
+        prediction = PredictionResult(
+            home_win_probability=0.65,
+            away_win_probability=0.35,
             confidence=0.8
         )
 
@@ -37,27 +37,26 @@ class TestBettorAgent:
         value_bet = ValueBet(
             bet_on="home",
             odds=1.80,
-            probability=0.65,
+            true_probability=0.65,
             edge=0.17,
-            kelly_fraction=0.15,
             kelly_stake=0.04,
-            quality_multiplier=0.85
+            confidence=0.8
         )
 
         # Create match
         match = Match(
             match_id="test_match_1",
-            sport="tennis",
+            sport=Sport.TENNIS,
+            date=datetime.now(),
             league="ATP 500",
             home_player=home_player,
             away_player=away_player,
-            start_time=datetime.now(),
             prediction=prediction,
             value_bet=value_bet
         )
 
         return NexusState(
-            sport="tennis",
+            sport=Sport.TENNIS,
             date=datetime.now().strftime("%Y-%m-%d"),
             approved_bets=[match],
             current_bankroll=1000.0
@@ -76,7 +75,7 @@ class TestBettorAgent:
         result_state = await agent.process(sample_state)
 
         assert agent.session is not None
-        assert agent.session.sport == "tennis"
+        assert agent.session.sport.value == "tennis"
         assert agent.session.starting_bankroll == 1000.0
 
     @pytest.mark.asyncio
@@ -95,7 +94,7 @@ class TestBettorAgent:
         bet = agent.bet_history[0]
 
         assert bet.match_id == "test_match_1"
-        assert bet.sport == "tennis"
+        assert bet.sport.value == "tennis"
         assert bet.selection == "home"
         assert bet.odds == 1.80
         assert bet.bookmaker == "simulation"
@@ -114,10 +113,10 @@ class TestBettorAgent:
     @pytest.mark.asyncio
     async def test_empty_approved_bets(self, agent):
         """Test handling of no approved bets."""
-        from core.state import NexusState
+        from core.state import NexusState, Sport
 
         state = NexusState(
-            sport="tennis",
+            sport=Sport.TENNIS,
             date="2024-01-01",
             approved_bets=[],
             current_bankroll=1000.0
@@ -219,7 +218,7 @@ class TestBettorAgent:
         )
 
         # EV = (prob * odds - 1) * stake = (0.6 * 2 - 1) * 100 = 20
-        assert bet.expected_value == 20.0
+        assert abs(bet.expected_value - 20.0) < 0.001
 
 
 class TestBettingSession:
@@ -314,30 +313,29 @@ class TestHelperFunctions:
     async def test_place_bets_helper(self):
         """Test place_bets convenience function."""
         from agents.bettor import place_bets
-        from core.state import Match, Player, ValueBet, Prediction
+        from core.state import Match, PlayerStats, ValueBet, PredictionResult, Sport
         from datetime import datetime
 
         # Create test match
         match = Match(
             match_id="test",
-            sport="tennis",
+            sport=Sport.TENNIS,
+            date=datetime.now(),
             league="ATP",
-            home_player=Player(name="Player A", ranking=1),
-            away_player=Player(name="Player B", ranking=2),
-            start_time=datetime.now(),
-            prediction=Prediction(
-                home_probability=0.6,
-                away_probability=0.4,
+            home_player=PlayerStats(name="Player A", ranking=1, win_rate=0.75),
+            away_player=PlayerStats(name="Player B", ranking=2, win_rate=0.70),
+            prediction=PredictionResult(
+                home_win_probability=0.6,
+                away_win_probability=0.4,
                 confidence=0.8
             ),
             value_bet=ValueBet(
                 bet_on="home",
                 odds=1.8,
-                probability=0.6,
+                true_probability=0.6,
                 edge=0.08,
-                kelly_fraction=0.1,
                 kelly_stake=0.03,
-                quality_multiplier=0.9
+                confidence=0.8
             )
         )
 

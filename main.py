@@ -92,8 +92,8 @@ def run_server(args):
     """Run the FastAPI server."""
     from api.main import app
     
-    print_banner()
-    print_step("Starting NEXUS AI API Server...")
+    print_banner("NEXUS AI v2.2.0 - API Server")
+    print("Starting NEXUS AI API Server...")
     print(f"  Version: 2.2.0")
     print(f"  Port: {args.port}")
     print(f"  Host: {args.host}")
@@ -118,8 +118,8 @@ async def run_single_analysis(args):
     """Run a single analysis."""
     from nexus import run_analysis as nexus_run_analysis
     
-    print_banner()
-    print_step(f"Running analysis for {args.analyze}...")
+    print_banner(f"NEXUS AI - {args.analyze.upper()} Analysis")
+    print(f"Running analysis for {args.analyze}...")
     
     result = await nexus_run_analysis(
         sport=args.analyze,
@@ -138,8 +138,8 @@ async def run_analysis_loop(args):
     from nexus import run_analysis as nexus_run_analysis
     import aioschedule as schedule
     
-    print_banner()
-    print_step("Starting Analysis Loop...")
+    print_banner("NEXUS AI - Analysis Loop")
+    print("Starting Analysis Loop...")
     print(f"  Interval: {args.interval} seconds")
     print()
     
@@ -163,8 +163,8 @@ async def run_analysis_loop(args):
 
 def check_system():
     """Check system configuration."""
-    print_banner()
-    print_step("Checking System Configuration...")
+    print_banner("NEXUS AI - System Check")
+    print("Checking System Configuration...")
     print()
     
     checks = []
@@ -245,8 +245,8 @@ def main():
     
     # Initialize database
     if args.init_db:
-        print_banner()
-        print_step("Initializing Database...")
+        print_banner("NEXUS AI - Database Initialization")
+        print("Initializing Database...")
         from scripts.init_db import init_database
         init_database()
         return 0

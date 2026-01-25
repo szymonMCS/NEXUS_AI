@@ -17,9 +17,8 @@ from datetime import datetime
 from enum import Enum
 import math
 
-from langchain_anthropic import ChatAnthropic
-
 from config.settings import settings
+from config.llm_config import get_llm
 from config.thresholds import thresholds
 from core.state import (
     NexusState, Match, BetDecision,
@@ -131,11 +130,7 @@ class RankerAgent:
 
     def __init__(self, model_name: str = None):
         self.model_name = model_name or settings.MODEL_NAME
-        self.llm = ChatAnthropic(
-            model=self.model_name,
-            api_key=settings.ANTHROPIC_API_KEY,
-            temperature=0.1
-        )
+        self.llm = get_llm(model_name=self.model_name, temperature=0.1)
 
     async def process(self, state: NexusState) -> NexusState:
         """

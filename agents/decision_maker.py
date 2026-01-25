@@ -7,9 +7,8 @@ Applies final filters and approves/rejects bets.
 from typing import List, Dict
 from datetime import datetime
 
-from langchain_anthropic import ChatAnthropic
-
 from config.settings import settings
+from config.llm_config import get_llm
 from core.state import (
     NexusState, Match, BetDecision,
     add_message
@@ -30,11 +29,7 @@ class DecisionMakerAgent:
 
     def __init__(self, model_name: str = None):
         self.model_name = model_name or settings.MODEL_NAME
-        self.llm = ChatAnthropic(
-            model=self.model_name,
-            api_key=settings.ANTHROPIC_API_KEY,
-            temperature=0.1
-        )
+        self.llm = get_llm(model_name=self.model_name, temperature=0.1)
 
         # Decision thresholds
         self.min_confidence = 0.4  # Minimum prediction confidence

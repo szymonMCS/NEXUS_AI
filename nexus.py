@@ -36,13 +36,26 @@ except ImportError:
 
 def print_banner(title: str, info: Dict[str, str] = None):
     """Print formatted CLI banner."""
-    print(f"\n╔{'═' * 62}╗")
-    print(f"║  {title:<58}  ║")
-    print(f"╠{'═' * 62}╣")
-    if info:
-        for key, value in info.items():
-            print(f"║  {key}: {value:<51}  ║")
-    print(f"╚{'═' * 62}╝\n")
+    import os
+    # Use ASCII on Windows, Unicode elsewhere
+    if os.name == 'nt':
+        # Windows - use ASCII
+        print(f"\n+{'=' * 62}+")
+        print(f"|  {title:<58}  |")
+        print(f"+{'=' * 62}+")
+        if info:
+            for key, value in info.items():
+                print(f"|  {key}: {value:<51}  |")
+        print(f"+{'=' * 62}+\n")
+    else:
+        # Linux/Mac - use Unicode box drawing
+        print(f"\n╔{'═' * 62}╗")
+        print(f"║  {title:<58}  ║")
+        print(f"╠{'═' * 62}╣")
+        if info:
+            for key, value in info.items():
+                print(f"║  {key}: {value:<51}  ║")
+        print(f"╚{'═' * 62}╝\n")
 
 
 def print_step(step_num: int, total: int, message: str, status: str = "..."):

@@ -1,8 +1,8 @@
 # config/settings.py
 import os
 from pathlib import Path
-from typing import Optional, Literal
-from pydantic_settings import BaseSettings
+from typing import Optional, Literal, List
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
 AppMode = Literal["lite", "pro"]
@@ -13,47 +13,73 @@ class Settings(BaseSettings):
     # === PODSTAWOWE ===
     APP_NAME: str = "NEXUS AI"
     APP_VERSION: str = "2.0.0"
-    APP_MODE: AppMode = Field(default="lite", env="APP_MODE")  # "lite" lub "pro"
-    DEBUG: bool = Field(default=False, env="DEBUG")
-    LOG_LEVEL: str = Field(default="INFO", env="LOG_LEVEL")
+    APP_MODE: AppMode = "lite"  # "lite" lub "pro"
+    DEBUG: bool = False
+    LOG_LEVEL: str = "INFO"
 
     # === BAZA DANYCH ===
-    DATABASE_URL: str = Field(
-        default="sqlite:///./nexus.db",
-        env="DATABASE_URL"
-    )
-    REDIS_URL: str = Field(
-        default="redis://localhost:6379/0",
-        env="REDIS_URL"
-    )
+    DATABASE_URL: str = "sqlite:///./nexus.db"
+    REDIS_URL: str = "redis://localhost:6379/0"
 
     # === API KEYS - NEWS ===
-    BRAVE_API_KEY: Optional[str] = Field(default=None, env="BRAVE_API_KEY")
-    SERPER_API_KEY: Optional[str] = Field(default=None, env="SERPER_API_KEY")
-    NEWSAPI_KEY: Optional[str] = Field(default=None, env="NEWSAPI_KEY")
+    BRAVE_API_KEY: Optional[str] = None
+    SERPER_API_KEY: Optional[str] = None
+    NEWSAPI_KEY: Optional[str] = None
 
     # === API KEYS - SPORTS DATA ===
-    ODDS_API_KEY: Optional[str] = Field(default=None, env="ODDS_API_KEY")
-    API_TENNIS_KEY: Optional[str] = Field(default=None, env="API_TENNIS_KEY")
-    BETS_API_KEY: Optional[str] = Field(default=None, env="BETS_API_KEY")
+    ODDS_API_KEY: Optional[str] = None
+    API_TENNIS_KEY: Optional[str] = None
+    BETS_API_KEY: Optional[str] = None
 
     # === API KEYS - LLM ===
-    ANTHROPIC_API_KEY: Optional[str] = Field(default=None, env="ANTHROPIC_API_KEY")
+    ANTHROPIC_API_KEY: Optional[str] = None
+    OPENAI_API_KEY: Optional[str] = None
+    MINIMAX_API_KEY: Optional[str] = None
+    LLM_PROVIDER: str = "anthropic"  # "anthropic", "openai", or "minimax"
+    MODEL_NAME: str = "claude-sonnet-4-20250506"
 
     # === SYSTEM ===
-    RUN_EVERY_N_MINUTES: int = Field(default=30, env="RUN_EVERY_N_MINUTES")
-    ENABLE_LIVE_ODDS: bool = Field(default=False, env="ENABLE_LIVE_ODDS")
-    MAX_CONCURRENT_REQUESTS: int = Field(default=10, env="MAX_CONCURRENT_REQUESTS")
+    RUN_EVERY_N_MINUTES: int = 30
+    ENABLE_LIVE_ODDS: bool = False
+    MAX_CONCURRENT_REQUESTS: int = 10
 
     # === LITE MODE SETTINGS ===
-    USE_WEB_SCRAPING: bool = Field(default=True, env="USE_WEB_SCRAPING")
-    USE_FREE_APIS: bool = Field(default=True, env="USE_FREE_APIS")
-    ENABLE_CACHE: bool = Field(default=True, env="ENABLE_CACHE")
-    CACHE_TTL_HOURS: int = Field(default=1, env="CACHE_TTL_HOURS")
+    USE_WEB_SCRAPING: bool = True
+    USE_FREE_APIS: bool = True
+    ENABLE_CACHE: bool = True
+    CACHE_TTL_HOURS: int = 1
 
     # === API-SPORTS FREE TIER (opcjonalne) ===
-    API_SPORTS_BASKETBALL_KEY: Optional[str] = Field(default=None, env="API_SPORTS_BASKETBALL_KEY")
-    API_SPORTS_TENNIS_KEY: Optional[str] = Field(default=None, env="API_SPORTS_TENNIS_KEY")
+    API_SPORTS_BASKETBALL_KEY: Optional[str] = None
+    API_SPORTS_TENNIS_KEY: Optional[str] = None
+
+    # === BETTING CONFIGURATION ===
+    DEFAULT_BANKROLL: float = 1000.0
+    KELLY_FRACTION: float = 0.25
+    MAX_STAKE_PERCENT: float = 0.05
+    MAX_DAILY_STAKE_PERCENT: float = 0.20
+    MIN_EDGE_POPULAR: float = 0.03
+    MIN_EDGE_MEDIUM: float = 0.05
+    MIN_EDGE_UNPOPULAR: float = 0.07
+
+    # === SECURITY ===
+    SECRET_KEY: str = "nexus_secret_key_change_in_production"
+    CORS_ORIGINS: str = '["http://localhost:3000", "http://localhost:8000"]'
+
+    @property
+    def get_cors_origins(self) -> List[str]:
+        """Parse CORS_ORIGINS from JSON string."""
+        import json
+        try:
+            return json.loads(self.CORS_ORIGINS)
+        except (json.JSONDecodeError, TypeError):
+            return ["http://localhost:3000", "http://localhost:8000"]
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
 
     @property
     def is_lite_mode(self) -> bool:
@@ -64,10 +90,6 @@ class Settings(BaseSettings):
     def is_pro_mode(self) -> bool:
         """Czy aplikacja działa w trybie Pro"""
         return self.APP_MODE == "pro"
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 
 # Singleton instance

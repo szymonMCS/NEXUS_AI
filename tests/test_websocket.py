@@ -85,11 +85,22 @@ class TestWebSocketEndpoint:
 
 class TestProgressBroadcasting:
     """Tests for progress broadcasting functionality."""
-    
+
+    @pytest.fixture(autouse=True)
+    def reset_analysis_state(self):
+        """Reset analysis state before each test."""
+        from api.main import analysis_state
+        # Reset to initial state
+        analysis_state["is_running"] = False
+        analysis_state["current_step"] = None
+        analysis_state["progress"] = 0
+        analysis_state["last_result"] = None
+        yield
+
     def test_analysis_state_initialization(self):
         """Test that analysis state is properly initialized."""
         from api.main import analysis_state
-        
+
         assert analysis_state["is_running"] == False
         assert analysis_state["current_step"] == None
         assert analysis_state["progress"] == 0
