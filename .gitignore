@@ -84,4 +84,9 @@ NEXUS_AI_v2_Pelna_Implementacja.md
 
 # Resource folders (drafts and templates)
 backend_draft/
-frontend/
+
+# Frontend build artifacts (keep source, ignore build)
+frontend/app/node_modules/
+frontend/app/dist/
+frontend/app/.env
+frontend/app/.env.local

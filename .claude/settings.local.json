@@ -22,7 +22,8 @@
       "WebFetch(domain:nerdytips.com)",
       "Bash(python -m pytest:*)",
       "Bash(npm install:*)",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "Bash(ls:*)"
     ]
   }
 }
