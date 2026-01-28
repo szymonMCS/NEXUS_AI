@@ -90,3 +90,15 @@ frontend/app/node_modules/
 frontend/app/dist/
 frontend/app/.env
 frontend/app/.env.local
+
+# Large data files (>100MB GitHub limit)
+data/score_network/*_train.csv
+data/score_network/*_test.csv
+data/sports/*/score_network/*.csv
+data/raw/football_data/*.xlsx
+data/historical/*.json
+agents/sports_data_swarm/datasets/**/*.csv
+*.pkl
+
+# Node modules at root
+node_modules/
