@@ -159,22 +159,26 @@ manager = ConnectionManager()
 # === API ENDPOINTS ===
 
 @app.get("/api/status")
-async def get_status() -> SystemStatus:
-    """Get system status."""
+async def get_status() -> Dict[str, Any]:
+    """Get comprehensive system status including API availability."""
     uptime = (datetime.now() - analysis_state["start_time"]).total_seconds()
 
-    return SystemStatus(
-        status="running" if not analysis_state["is_running"] else "analyzing",
-        mode=settings.APP_MODE,
-        api_keys_configured={
-            "brave_search": bool(settings.BRAVE_API_KEY),
-            "serper": bool(settings.SERPER_API_KEY),
-            "odds_api": bool(settings.ODDS_API_KEY),
-            "anthropic": bool(settings.ANTHROPIC_API_KEY),
-        },
-        last_analysis=analysis_state["last_analysis_time"],
-        uptime_seconds=uptime
-    )
+    # Get API status from settings
+    api_status = settings.get_api_status()
+    is_valid, warnings = settings.validate_mode_requirements()
+    available_sources = settings.get_available_data_sources()
+
+    return {
+        "status": "running" if not analysis_state["is_running"] else "analyzing",
+        "mode": settings.APP_MODE,
+        "mode_valid": is_valid,
+        "warnings": warnings,
+        "api_status": api_status,
+        "available_data_sources": available_sources,
+        "last_analysis": analysis_state["last_analysis_time"],
+        "uptime_seconds": uptime,
+        "version": settings.APP_VERSION,
+    }
 
 
 @app.post("/api/analysis")
@@ -193,6 +197,23 @@ async def run_analysis(
             detail="Analysis already in progress"
         )
 
+    # Validate mode requirements before starting analysis
+    is_valid, warnings = settings.validate_mode_requirements()
+    if not is_valid:
+        # Check if we have at least LLM configured
+        api_status = settings.get_api_status()
+        if not api_status["llm"]["openai"] and not api_status["llm"]["anthropic"]:
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "error": "No LLM API configured",
+                    "warnings": warnings,
+                    "hint": "Configure OPENAI_API_KEY or ANTHROPIC_API_KEY in .env"
+                }
+            )
+        # Otherwise just return warnings but allow analysis
+        # (lite mode can work with limited sources)
+
     target_date = request.date or str(date.today())
 
     # Start background analysis
@@ -208,6 +229,9 @@ async def run_analysis(
         "status": "started",
         "sport": request.sport,
         "date": target_date,
+        "mode": settings.APP_MODE,
+        "warnings": warnings if not is_valid else [],
+        "available_sources": settings.get_available_data_sources(),
         "message": "Analysis started. Connect to WebSocket for updates."
     }
 

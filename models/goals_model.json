@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "params": {
+    "league_avg_goals": 112.57523696682465,
+    "home_advantage": 1.0138085246179607,
+    "attack_weight": 0.4,
+    "defense_weight": 0.4,
+    "form_weight": 0.15,
+    "h2h_weight": 0.05
+  },
+  "trained": true,
+  "training_samples": 1056,
+  "trained_at": "2026-01-27T20:22:45.165723",
+  "metrics": {
+    "mae_home": 109.19339622641509,
+    "mae_away": 107.27830188679245,
+    "mae_total": 216.47169811320754,
+    "over_under_accuracy": 1.0
+  },
+  "feature_names": [
+    "away_strength",
+    "home_strength",
+    "league_avg_goals"
+  ],
+  "attack_adjustments": {},
+  "defense_adjustments": {}
+}

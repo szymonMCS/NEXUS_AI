@@ -1,0 +1,1 @@
+{"feature_names": ["total_mins_played", "total_pts", "total_rebounds", "total_assists", "mp", "game_seconds_remaining", "games_played", "quarter_seconds_remaining", "game_play_number", "margin", "coordinate_x", "win_shares", "home_score", "gp", "ortg", "away_score", "g", "gs", "o_rtg", "pick_overall", "net_rating", "coordinate_y", "mins_per_game", "pick_in_round", "points"]}

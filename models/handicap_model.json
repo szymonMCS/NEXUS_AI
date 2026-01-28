@@ -1,0 +1,31 @@
+{
+  "version": "1.0.0",
+  "params": {
+    "margin_std": 16.284808615742058,
+    "home_advantage_goals": 0.35
+  },
+  "trained": true,
+  "training_samples": 1056,
+  "trained_at": "2026-01-27T20:22:45.386324",
+  "metrics": {
+    "mae_margin": 12.757075471698114,
+    "accuracy_1x2": 0.5235849056603774,
+    "accuracy_handicap_15": 0.5188679245283019
+  },
+  "feature_names": [
+    "away_strength",
+    "home_strength",
+    "league_avg_goals"
+  ],
+  "feature_weights": {
+    "handicap_attack_diff": 0.0,
+    "handicap_defense_diff": 0.0,
+    "handicap_overall_strength_diff": 0.0,
+    "handicap_form_diff": 0.0,
+    "handicap_elo_diff": 0.0,
+    "handicap_h2h_avg_margin": 0.0
+  },
+  "intercept": 1.5438388625592416,
+  "calibration_a": 1.0,
+  "calibration_b": 0.0
+}

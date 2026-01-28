@@ -1,0 +1,42 @@
+{
+  "sport": "volleyball",
+  "evaluated_at": "2026-01-28T15:30:16.334807",
+  "record_count": 127,
+  "quality_score": 90.24,
+  "quality_grade": "A (Excellent)",
+  "metrics": {
+    "completeness": {
+      "overall": 1.0,
+      "field_rates": {
+        "match_id": 1.0,
+        "date": 1.0,
+        "home_team": 1.0,
+        "away_team": 1.0,
+        "home_sets_won": 1.0,
+        "away_sets_won": 1.0,
+        "home_total_points": 1.0,
+        "away_total_points": 1.0
+      }
+    },
+    "consistency": {
+      "rate": 0.7559055118110236,
+      "issues": [
+        "Record 0: Invalid total sets 0",
+        "Record 0: Tied sets (impossible)",
+        "Record 8: Invalid total sets 2",
+        "Record 9: Invalid total sets 2",
+        "Record 10: Invalid total sets 2",
+        "Record 65: Tied sets (impossible)",
+        "Record 66: Tied sets (impossible)",
+        "Record 67: Tied sets (impossible)",
+        "Record 72: Invalid total sets 2",
+        "Record 73: Invalid total sets 2"
+      ]
+    },
+    "avg_sets_per_match": 3.4015748031496065,
+    "five_set_matches": 0.18110236220472442
+  },
+  "recommendations": [
+    "Address data consistency issues"
+  ]
+}

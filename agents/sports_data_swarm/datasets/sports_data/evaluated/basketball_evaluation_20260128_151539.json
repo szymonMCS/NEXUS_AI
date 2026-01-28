@@ -1,0 +1,47 @@
+{
+  "sport": "basketball",
+  "evaluated_at": "2026-01-28T15:15:39.008836",
+  "record_count": 2,
+  "quality_score": 60.0,
+  "quality_grade": "D (Poor)",
+  "metrics": {
+    "completeness": {
+      "overall": 1.0,
+      "field_rates": {
+        "game_id": 1.0,
+        "date": 1.0,
+        "home_team": 1.0,
+        "away_team": 1.0,
+        "home_score": 1.0,
+        "away_score": 1.0,
+        "home_fg_made": 1.0,
+        "home_fg_attempts": 1.0,
+        "home_rebounds": 1.0,
+        "home_assists": 1.0,
+        "away_fg_made": 1.0,
+        "away_fg_attempts": 1.0,
+        "away_rebounds": 1.0,
+        "away_assists": 1.0
+      }
+    },
+    "consistency": {
+      "rate": 0.0,
+      "issues": [
+        "Record 0: Quarter total mismatch for home team",
+        "Record 1: Quarter total mismatch for home team"
+      ]
+    },
+    "statistical_distribution": {
+      "avg_total_score": 172,
+      "score_std": 24.041630560342615,
+      "score_range": [
+        155,
+        189
+      ]
+    },
+    "home_win_rate": 0.5
+  },
+  "recommendations": [
+    "Address data consistency issues"
+  ]
+}

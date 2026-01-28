@@ -1,0 +1,42 @@
+{
+  "sport": "handball",
+  "evaluated_at": "2026-01-28T15:32:57.042153",
+  "record_count": 167,
+  "quality_score": 98.08,
+  "quality_grade": "A (Excellent)",
+  "metrics": {
+    "completeness": {
+      "overall": 1.0,
+      "field_rates": {
+        "match_id": 1.0,
+        "date": 1.0,
+        "home_team": 1.0,
+        "away_team": 1.0,
+        "home_score": 1.0,
+        "away_score": 1.0,
+        "home_shots": 1.0,
+        "away_shots": 1.0,
+        "home_saves": 1.0,
+        "away_saves": 1.0
+      }
+    },
+    "consistency": {
+      "rate": 0.9520958083832335,
+      "issues": [
+        "Record 7: Draw (rare in handball)",
+        "Record 29: Draw (rare in handball)",
+        "Record 52: Draw (rare in handball)",
+        "Record 106: Draw (rare in handball)",
+        "Record 111: Draw (rare in handball)",
+        "Record 120: Draw (rare in handball)",
+        "Record 129: Draw (rare in handball)",
+        "Record 136: Draw (rare in handball)"
+      ]
+    },
+    "avg_total_goals": 52.17964071856287,
+    "high_scoring_matches": 0.25149700598802394
+  },
+  "recommendations": [
+    "No major issues found"
+  ]
+}

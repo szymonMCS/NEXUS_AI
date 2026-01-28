@@ -1,0 +1,1 @@
+{"feature_names": ["game_seconds_remaining", "sec_from_start", "period_seconds_remaining", "x_fixed", "DIFF", "GA", "GF", "IceTime", "shot_distance", "shot_angle", "PTS", "Reg_PTS", "y_fixed", "goal_differential", "W", "ROW", "RW", "L", "OTL", "SOG", "home_score_total", "away_score_total", "SO_PTS", "SOW", "home_goals"]}

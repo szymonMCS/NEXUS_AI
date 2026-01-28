@@ -1,0 +1,166 @@
+{
+  "timestamp": "2026-01-28T16:00:19.429001",
+  "summary": {
+    "total_sports": 1,
+    "total_records": 1,
+    "sports": {
+      "tennis": {
+        "records": 1,
+        "success": true
+      }
+    }
+  },
+  "details": {
+    "tennis": {
+      "acquisition": {
+        "records": [
+          {
+            "match_id": "match_-2749364243163020274",
+            "date": "2026-01-28",
+            "player1_name": "Unknown",
+            "player2_name": "ATP Stats LeaderboardThe ATP top 50, sortable by almost 60 stats....plus,players ranked 51-100andchallengersSurface Speed RatingsWinners and Unforced Errors:Last 52|CareerMatch Charting Project Leaderboards:Last 52:Serve|Return|Rally|TacticsCareer:Serve|Return|Rally|TacticsATP H2H MatrixHead-to-head records of the current top 15.The Best ATP Players Who Haven't......won titles, reached main draws, etc.ATP Bakery ReportComprehensive stats for 6-0 and 6-1 sets.ATP Lottery Matches...and equally befuddling results from theChallenger tour",
+            "player1_sets_won": 2,
+            "player2_sets_won": 0,
+            "set_scores": "WTA Stats LeaderboardMore WTA stats than you'll find anywhere else....plus,players ranked 51-100Winners and Unforced Errors:Last 52|CareerMatch Charting Project Leaderboards:Last 52:Serve|Return|Rally|TacticsCareer:Serve|Return|Rally|TacticsWTA H2H MatrixHead-to-head records of the current top 15.The Best WTA Players Who Haven't......won titles, reached main draws, etc.WTA Bakery ReportComprehensive stats for 6-0 and 6-1 sets.WTA Lottery MatchesPlayers who snatched defeat from the jaws of victory.",
+            "tournament": "Unknown",
+            "surface": "Hard",
+            "source_url": "http://www.tennisabstract.com/"
+          }
+        ],
+        "raw_count": 1
+      },
+      "formatting": {
+        "records": [
+          {
+            "match_id": "match_-2749364243163020274",
+            "date": "2026-01-28",
+            "tournament": "Unknown",
+            "tournament_level": "ATP 250",
+            "surface": "Hard",
+            "round": "R32",
+            "player1_name": "Unknown",
+            "player2_name": "Atp Stats Leaderboardthe Atp Top 50, Sortable By Almost 60 Stats....Plus,Players Ranked 51-100Andchallengerssurface Speed Ratingswinners And Unforced Errors:Last 52|Careermatch Charting Project Leaderboards:Last 52:Serve|Return|Rally|Tacticscareer:Serve|Return|Rally|Tacticsatp H2H Matrixhead-To-Head Records Of The Current Top 15.The Best Atp Players Who Haven'T......Won Titles, Reached Main Draws, Etc.Atp Bakery Reportcomprehensive Stats For 6-0 And 6-1 Sets.Atp Lottery Matches...And Equally Befuddling Results From Thechallenger Tour",
+            "player1_rank": 100,
+            "player2_rank": 100,
+            "player1_seed": 0,
+            "player2_seed": 0,
+            "player1_sets_won": 2,
+            "player2_sets_won": 0,
+            "set1_score": "",
+            "set2_score": "",
+            "set3_score": "",
+            "set4_score": "",
+            "set5_score": "",
+            "player1_aces": 5,
+            "player2_aces": 5,
+            "player1_double_faults": 3,
+            "player2_double_faults": 3,
+            "player1_first_serve_pct": 0.6,
+            "player2_first_serve_pct": 0.6,
+            "player1_first_serve_won": 0.7,
+            "player2_first_serve_won": 0.7,
+            "player1_second_serve_won": 0.5,
+            "player2_second_serve_won": 0.5,
+            "player1_break_points_won": 2,
+            "player2_break_points_won": 2,
+            "player1_break_points_total": 5,
+            "player2_break_points_total": 5,
+            "player1_winners": 20,
+            "player2_winners": 20,
+            "player1_unforced_errors": 25,
+            "player2_unforced_errors": 25,
+            "player1_net_points_won": 8,
+            "player2_net_points_won": 8,
+            "player1_total_points_won": 70,
+            "player2_total_points_won": 70,
+            "match_duration_minutes": 120,
+            "umpire": "Unknown",
+            "venue": "Unknown",
+            "player1_age": "",
+            "player2_age": "",
+            "player1_height": "",
+            "player2_height": "",
+            "player1_hand": "",
+            "player2_hand": "",
+            "head_to_head_before_match": "",
+            "player1_odds": "",
+            "player2_odds": "",
+            "temperature": "",
+            "weather": "",
+            "sets_diff": 2,
+            "player1_win": 1,
+            "rank_diff": 0,
+            "favorite_win": 0,
+            "processed_at": "2026-01-28T16:00:19.419540"
+          }
+        ],
+        "compliance": {
+          "overall_rate": 1.0,
+          "field_rates": {
+            "match_id": 1.0,
+            "date": 1.0,
+            "tournament": 1.0,
+            "tournament_level": 1.0,
+            "surface": 1.0,
+            "round": 1.0,
+            "player1_name": 1.0,
+            "player2_name": 1.0,
+            "player1_rank": 1.0,
+            "player2_rank": 1.0,
+            "player1_seed": 1.0,
+            "player2_seed": 1.0,
+            "player1_sets_won": 1.0,
+            "player2_sets_won": 1.0,
+            "set1_score": 1.0,
+            "set2_score": 1.0,
+            "set3_score": 1.0,
+            "set4_score": 1.0,
+            "set5_score": 1.0,
+            "player1_aces": 1.0,
+            "player2_aces": 1.0,
+            "player1_double_faults": 1.0,
+            "player2_double_faults": 1.0,
+            "player1_first_serve_pct": 1.0,
+            "player2_first_serve_pct": 1.0,
+            "player1_first_serve_won": 1.0,
+            "player2_first_serve_won": 1.0,
+            "player1_second_serve_won": 1.0,
+            "player2_second_serve_won": 1.0,
+            "player1_break_points_won": 1.0,
+            "player2_break_points_won": 1.0,
+            "player1_break_points_total": 1.0,
+            "player2_break_points_total": 1.0,
+            "player1_winners": 1.0,
+            "player2_winners": 1.0,
+            "player1_unforced_errors": 1.0,
+            "player2_unforced_errors": 1.0,
+            "player1_net_points_won": 1.0,
+            "player2_net_points_won": 1.0,
+            "player1_total_points_won": 1.0,
+            "player2_total_points_won": 1.0,
+            "match_duration_minutes": 1.0,
+            "umpire": 1.0,
+            "venue": 1.0
+          },
+          "total_records": 1
+        },
+        "errors": []
+      },
+      "storage": {
+        "filepath": "datasets\\sports_data\\processed\\tennis_dataset_20260128_160019.csv",
+        "metadata_path": "datasets\\sports_data\\processed\\tennis_dataset_20260128_160019_metadata.json",
+        "record_count": 1,
+        "format": "csv"
+      }
+    }
+  },
+  "evaluation": {
+    "tennis": {
+      "sport": "tennis",
+      "total_records": 1,
+      "format": "csv",
+      "sources": 1,
+      "filepath": "datasets\\sports_data\\processed\\tennis_dataset_20260128_160019.csv"
+    }
+  }
+}

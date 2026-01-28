@@ -1,0 +1,33 @@
+{
+  "sport": "tennis",
+  "evaluated_at": "2026-01-28T15:48:24.591704",
+  "record_count": 1,
+  "quality_score": 100.0,
+  "quality_grade": "A (Excellent)",
+  "metrics": {
+    "completeness": {
+      "overall": 1.0,
+      "field_rates": {
+        "match_id": 1.0,
+        "date": 1.0,
+        "player1_name": 1.0,
+        "player2_name": 1.0,
+        "player1_sets_won": 1.0,
+        "player2_sets_won": 1.0,
+        "surface": 1.0
+      }
+    },
+    "consistency": {
+      "rate": 1.0,
+      "issues": []
+    },
+    "surface_distribution": {
+      "Hard": 1
+    },
+    "upset_rate": 0.0,
+    "avg_match_duration": 120
+  },
+  "recommendations": [
+    "No major issues found"
+  ]
+}

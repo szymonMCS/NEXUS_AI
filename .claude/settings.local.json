@@ -23,7 +23,13 @@
       "Bash(python -m pytest:*)",
       "Bash(npm install:*)",
       "Bash(git status:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "WebFetch(domain:dashboard.clerk.com)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "WebFetch(domain:platform.moonshot.ai)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.nature.com)"
     ]
   }
 }

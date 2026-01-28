@@ -1,0 +1,133 @@
+{
+  "timestamp": "2026-01-28T18:48:53.636675",
+  "disciplines": [
+    {
+      "discipline": "american_football",
+      "train_samples": 100000,
+      "test_samples": 25000,
+      "features": 25,
+      "models": {
+        "random_forest": {
+          "train_accuracy": 1.0,
+          "test_accuracy": 1.0
+        },
+        "mlp": {
+          "train_accuracy": 1.0,
+          "test_accuracy": 1.0
+        }
+      }
+    },
+    {
+      "discipline": "baseball",
+      "train_samples": 85190,
+      "test_samples": 21298,
+      "features": 25,
+      "models": {
+        "random_forest": {
+          "train_accuracy": 1.0,
+          "test_accuracy": 1.0
+        },
+        "mlp": {
+          "train_accuracy": 1.0,
+          "test_accuracy": 1.0
+        }
+      }
+    },
+    {
+      "discipline": "basketball",
+      "train_samples": 100000,
+      "test_samples": 25000,
+      "features": 25,
+      "models": {
+        "random_forest": {
+          "train_accuracy": 1.0,
+          "test_accuracy": 1.0
+        },
+        "mlp": {
+          "train_accuracy": 0.99964,
+          "test_accuracy": 0.9996
+        }
+      }
+    },
+    {
+      "discipline": "hockey",
+      "train_samples": 82505,
+      "test_samples": 20627,
+      "features": 25,
+      "models": {
+        "random_forest": {
+          "train_accuracy": 1.0,
+          "test_accuracy": 0.9997091191157221
+        },
+        "mlp": {
+          "train_accuracy": 0.999672747106236,
+          "test_accuracy": 0.9993697580840646
+        }
+      }
+    },
+    {
+      "discipline": "mma",
+      "train_samples": 100000,
+      "test_samples": 25000,
+      "features": 25,
+      "models": {
+        "random_forest": {
+          "train_accuracy": 1.0,
+          "test_accuracy": 1.0
+        },
+        "mlp": {
+          "train_accuracy": 0.99994,
+          "test_accuracy": 0.99992
+        }
+      }
+    },
+    {
+      "discipline": "olympics",
+      "train_samples": 66352,
+      "test_samples": 16588,
+      "features": 25,
+      "models": {
+        "random_forest": {
+          "train_accuracy": 1.0,
+          "test_accuracy": 0.9989148782252231
+        },
+        "mlp": {
+          "train_accuracy": 0.9990354473113093,
+          "test_accuracy": 0.9979503255365324
+        }
+      }
+    },
+    {
+      "discipline": "soccer",
+      "train_samples": 32683,
+      "test_samples": 8171,
+      "features": 25,
+      "models": {
+        "random_forest": {
+          "train_accuracy": 1.0,
+          "test_accuracy": 1.0
+        },
+        "mlp": {
+          "train_accuracy": 0.9994492549643545,
+          "test_accuracy": 0.9992656957532737
+        }
+      }
+    },
+    {
+      "discipline": "tennis",
+      "train_samples": 315835,
+      "test_samples": 25000,
+      "features": 25,
+      "models": {
+        "random_forest": {
+          "train_accuracy": 1.0,
+          "test_accuracy": 0.97144
+        },
+        "mlp": {
+          "train_accuracy": 0.9999050136938591,
+          "test_accuracy": 0.97084
+        }
+      }
+    }
+  ]
+}

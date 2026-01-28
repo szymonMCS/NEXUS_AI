@@ -35,8 +35,10 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     MINIMAX_API_KEY: Optional[str] = None
-    LLM_PROVIDER: str = "anthropic"  # "anthropic", "openai", or "minimax"
+    MOONSHOT_API_KEY: Optional[str] = None  # Moonshot Kimi API (https://platform.moonshot.ai)
+    LLM_PROVIDER: str = "anthropic"  # "anthropic", "openai", "minimax", or "kimi"
     MODEL_NAME: str = "claude-sonnet-4-20250506"
+    KIMI_MODEL: str = "kimi-k2.5-preview"  # kimi-k2.5-preview (latest), kimi-k2-thinking (reasoning), moonshot-v1-*
 
     # === SYSTEM ===
     RUN_EVERY_N_MINUTES: int = 30
@@ -90,6 +92,102 @@ class Settings(BaseSettings):
     def is_pro_mode(self) -> bool:
         """Czy aplikacja działa w trybie Pro"""
         return self.APP_MODE == "pro"
+
+    def _is_placeholder(self, value: Optional[str]) -> bool:
+        """Check if API key is a placeholder."""
+        if not value:
+            return True
+        placeholders = ["your_", "placeholder", "xxx", "change_me", "none", "null"]
+        return any(p in value.lower() for p in placeholders)
+
+    def get_api_status(self) -> dict:
+        """
+        Get status of all API configurations.
+        Returns dict showing which APIs are available vs missing/placeholder.
+        """
+        return {
+            "mode": self.APP_MODE,
+            "llm": {
+                "openai": not self._is_placeholder(self.OPENAI_API_KEY),
+                "anthropic": not self._is_placeholder(self.ANTHROPIC_API_KEY),
+                "moonshot": not self._is_placeholder(self.MOONSHOT_API_KEY),
+                "provider": self.LLM_PROVIDER,
+                "model": self.MODEL_NAME,
+            },
+            "news": {
+                "brave": not self._is_placeholder(self.BRAVE_API_KEY),
+                "serper": not self._is_placeholder(self.SERPER_API_KEY),
+                "newsapi": not self._is_placeholder(self.NEWSAPI_KEY),
+            },
+            "sports_pro": {
+                "odds_api": not self._is_placeholder(self.ODDS_API_KEY),
+                "api_tennis": not self._is_placeholder(self.API_TENNIS_KEY),
+                "bets_api": not self._is_placeholder(self.BETS_API_KEY),
+            },
+            "sports_lite": {
+                "thesportsdb": True,  # Always available (free public API)
+                "sofascore": self.USE_WEB_SCRAPING,
+                "flashscore": self.USE_WEB_SCRAPING,
+            },
+            "features": {
+                "web_scraping": self.USE_WEB_SCRAPING,
+                "free_apis": self.USE_FREE_APIS,
+                "cache": self.ENABLE_CACHE,
+                "live_odds": self.ENABLE_LIVE_ODDS and not self._is_placeholder(self.ODDS_API_KEY),
+            }
+        }
+
+    def get_available_data_sources(self) -> List[str]:
+        """Get list of available data sources based on mode and API keys."""
+        sources = []
+
+        # Free sources (always available in Lite mode)
+        if self.is_lite_mode or self.USE_FREE_APIS:
+            sources.extend(["TheSportsDB", "Web Scraping (Sofascore/Flashscore)"])
+
+        # News sources
+        if not self._is_placeholder(self.BRAVE_API_KEY):
+            sources.append("Brave Search")
+        if not self._is_placeholder(self.SERPER_API_KEY):
+            sources.append("Serper (Google)")
+
+        # Pro sources
+        if self.is_pro_mode:
+            if not self._is_placeholder(self.ODDS_API_KEY):
+                sources.append("The Odds API")
+            if not self._is_placeholder(self.API_TENNIS_KEY):
+                sources.append("API Tennis")
+            if not self._is_placeholder(self.BETS_API_KEY):
+                sources.append("Bets API")
+            if not self._is_placeholder(self.NEWSAPI_KEY):
+                sources.append("NewsAPI")
+
+        return sources
+
+    def validate_mode_requirements(self) -> tuple[bool, List[str]]:
+        """
+        Validate that required APIs for current mode are configured.
+        Returns (is_valid, list_of_warnings).
+        """
+        warnings = []
+
+        # LLM is required for all modes
+        if self._is_placeholder(self.OPENAI_API_KEY) and self._is_placeholder(self.ANTHROPIC_API_KEY):
+            warnings.append("No LLM API key configured (OPENAI_API_KEY or ANTHROPIC_API_KEY required)")
+
+        if self.is_lite_mode:
+            # Lite mode needs at least one news source
+            if self._is_placeholder(self.BRAVE_API_KEY) and self._is_placeholder(self.SERPER_API_KEY):
+                warnings.append("No news API configured for Lite mode (BRAVE_API_KEY or SERPER_API_KEY recommended)")
+
+        if self.is_pro_mode:
+            # Pro mode should have paid APIs
+            if self._is_placeholder(self.ODDS_API_KEY):
+                warnings.append("ODDS_API_KEY not configured (required for Pro mode live odds)")
+            if self._is_placeholder(self.API_TENNIS_KEY):
+                warnings.append("API_TENNIS_KEY not configured (required for Pro mode tennis data)")
+
+        return len(warnings) == 0, warnings
 
 
 # Singleton instance

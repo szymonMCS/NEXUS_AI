@@ -3,12 +3,15 @@
 API Routers for NEXUS AI.
 Organized endpoints for predictions, ensemble, monitoring, and admin.
 Based on concepts from backend_draft/api/routers.py
+
+Checkpoint: 4.5 - Added ML predictions router
 """
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 import logging
+import uuid
 
 from pydantic import BaseModel
 
@@ -16,6 +19,76 @@ logger = logging.getLogger(__name__)
 
 
 # === PYDANTIC MODELS ===
+
+# --- ML Prediction Models ---
+
+class MLPredictRequest(BaseModel):
+    """Request for ML prediction."""
+    match_id: str
+    sport: str = "football"
+    home_team_id: Optional[str] = None
+    away_team_id: Optional[str] = None
+    home_team_name: Optional[str] = None
+    away_team_name: Optional[str] = None
+    league: Optional[str] = None
+    match_date: Optional[str] = None
+    include_recommendations: bool = True
+    market_odds: Optional[Dict[str, float]] = None
+
+
+class MLPredictResponse(BaseModel):
+    """Response for ML prediction."""
+    match_id: str
+    prediction_id: str
+    status: str
+    goals: Optional[Dict[str, Any]] = None
+    handicap: Optional[Dict[str, Any]] = None
+    recommendations: Optional[List[Dict[str, Any]]] = None
+    data_quality: Optional[Dict[str, Any]] = None
+    processing_time_ms: float
+    timestamp: str
+
+
+class MLBatchPredictRequest(BaseModel):
+    """Request for batch ML prediction."""
+    matches: List[MLPredictRequest]
+    include_recommendations: bool = True
+
+
+class MLBatchPredictResponse(BaseModel):
+    """Response for batch ML prediction."""
+    predictions: List[MLPredictResponse]
+    success_count: int
+    failure_count: int
+    value_bet_count: int
+    total_processing_time_ms: float
+    timestamp: str
+
+
+class MLModelStatusResponse(BaseModel):
+    """Response for ML model status."""
+    models: Dict[str, Dict[str, Any]]
+    registry_path: Optional[str]
+    total_predictions: int
+    last_trained: Optional[str]
+
+
+class MLTrainRequest(BaseModel):
+    """Request for model training."""
+    model_name: str
+    force: bool = False
+
+
+class MLTrainResponse(BaseModel):
+    """Response for model training."""
+    success: bool
+    model_name: str
+    version: Optional[str]
+    metrics: Optional[Dict[str, float]]
+    error_message: Optional[str]
+
+
+# --- Ensemble Models ---
 
 class EnsemblePredictRequest(BaseModel):
     """Request for ensemble prediction."""
@@ -73,6 +146,9 @@ class AlertsResponse(BaseModel):
 
 # === ROUTERS ===
 
+# ML Predictions router
+ml_router = APIRouter(prefix="/api/ml", tags=["ml"])
+
 # Ensemble router
 ensemble_router = APIRouter(prefix="/api/ensemble", tags=["ensemble"])
 
@@ -81,6 +157,368 @@ monitoring_router = APIRouter(prefix="/api/monitoring", tags=["monitoring"])
 
 # Admin router
 admin_router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+
+# === ML PREDICTION ENDPOINTS ===
+
+@ml_router.post("/predict", response_model=MLPredictResponse)
+async def ml_predict(request: MLPredictRequest):
+    """
+    Generate ML prediction for a match.
+
+    Uses Poisson model for goals/over-under and GBM for handicap.
+    """
+    try:
+        from core.data.schemas import MatchData, DataQuality, Sport
+        from core.data.repository import UnifiedDataRepository
+        from core.ml.service import MLPredictionService
+
+        # Create match data from request
+        sport = Sport(request.sport) if request.sport in [s.value for s in Sport] else Sport.FOOTBALL
+
+        match = MatchData(
+            match_id=request.match_id,
+            sport=sport,
+            league=request.league or "",
+            home_team=request.home_team_name,
+            away_team=request.away_team_name,
+            home_team_id=request.home_team_id,
+            away_team_id=request.away_team_id,
+            quality=DataQuality(completeness=0.5, freshness=1.0, sources_count=1),
+        )
+
+        # Get prediction service
+        repository = UnifiedDataRepository()
+        service = MLPredictionService(repository=repository)
+
+        # Generate prediction
+        result = service.predict(
+            match=match,
+            include_recommendations=request.include_recommendations,
+            market_odds=request.market_odds,
+        )
+
+        # Convert to response
+        response_data = result.to_dict()
+        return MLPredictResponse(
+            match_id=response_data["match_id"],
+            prediction_id=response_data["prediction_id"],
+            status=response_data["status"],
+            goals=response_data.get("goals"),
+            handicap=response_data.get("handicap"),
+            recommendations=response_data.get("recommendations"),
+            data_quality=response_data.get("data_quality"),
+            processing_time_ms=response_data["processing_time_ms"],
+            timestamp=response_data["timestamp"],
+        )
+
+    except Exception as e:
+        logger.exception(f"ML prediction error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@ml_router.post("/predict/batch", response_model=MLBatchPredictResponse)
+async def ml_predict_batch(request: MLBatchPredictRequest):
+    """
+    Generate ML predictions for multiple matches.
+    """
+    try:
+        from core.data.schemas import MatchData, DataQuality, Sport
+        from core.data.repository import UnifiedDataRepository
+        from core.ml.service import MLPredictionService
+
+        repository = UnifiedDataRepository()
+        service = MLPredictionService(repository=repository)
+
+        # Convert requests to match data
+        matches = []
+        for req in request.matches:
+            sport = Sport(req.sport) if req.sport in [s.value for s in Sport] else Sport.FOOTBALL
+            match = MatchData(
+                match_id=req.match_id,
+                sport=sport,
+                league=req.league or "",
+                home_team=req.home_team_name,
+                away_team=req.away_team_name,
+                home_team_id=req.home_team_id,
+                away_team_id=req.away_team_id,
+                quality=DataQuality(completeness=0.5, freshness=1.0, sources_count=1),
+            )
+            matches.append(match)
+
+        # Generate batch predictions
+        batch_result = service.predict_batch(
+            matches=matches,
+            include_recommendations=request.include_recommendations,
+        )
+
+        # Convert to responses
+        predictions = []
+        for result in batch_result.predictions:
+            response_data = result.to_dict()
+            predictions.append(MLPredictResponse(
+                match_id=response_data["match_id"],
+                prediction_id=response_data["prediction_id"],
+                status=response_data["status"],
+                goals=response_data.get("goals"),
+                handicap=response_data.get("handicap"),
+                recommendations=response_data.get("recommendations"),
+                data_quality=response_data.get("data_quality"),
+                processing_time_ms=response_data["processing_time_ms"],
+                timestamp=response_data["timestamp"],
+            ))
+
+        return MLBatchPredictResponse(
+            predictions=predictions,
+            success_count=batch_result.success_count,
+            failure_count=batch_result.failure_count,
+            value_bet_count=batch_result.value_bet_count,
+            total_processing_time_ms=batch_result.total_processing_time_ms,
+            timestamp=batch_result.timestamp.isoformat(),
+        )
+
+    except Exception as e:
+        logger.exception(f"ML batch prediction error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@ml_router.get("/models/status", response_model=MLModelStatusResponse)
+async def get_ml_models_status():
+    """
+    Get status of ML models.
+    """
+    try:
+        from core.ml.registry import ModelRegistry
+        from pathlib import Path
+
+        # Try to load registry
+        registry_path = Path("data/ml/registry")
+        registry = ModelRegistry(storage_path=registry_path) if registry_path.exists() else None
+
+        models_info = {}
+        total_predictions = 0
+        last_trained = None
+
+        if registry:
+            for model_name in ["poisson_goals", "gbm_handicap"]:
+                versions = registry.get_versions(model_name)
+                active = registry.get_active_version(model_name)
+                models_info[model_name] = {
+                    "versions_count": len(versions),
+                    "active_version": active.version if active else None,
+                    "active_metrics": active.metrics if active else {},
+                    "last_updated": active.created_at.isoformat() if active else None,
+                }
+                if active and (last_trained is None or active.created_at > datetime.fromisoformat(last_trained)):
+                    last_trained = active.created_at.isoformat()
+        else:
+            models_info = {
+                "poisson_goals": {"status": "not_initialized", "versions_count": 0},
+                "gbm_handicap": {"status": "not_initialized", "versions_count": 0},
+            }
+
+        return MLModelStatusResponse(
+            models=models_info,
+            registry_path=str(registry_path) if registry else None,
+            total_predictions=total_predictions,
+            last_trained=last_trained,
+        )
+
+    except Exception as e:
+        logger.exception(f"Error getting ML models status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@ml_router.post("/models/train", response_model=MLTrainResponse)
+async def train_ml_model(request: MLTrainRequest, background_tasks: BackgroundTasks):
+    """
+    Train or retrain an ML model.
+
+    Available models: poisson_goals, gbm_handicap
+    """
+    try:
+        from core.ml.registry import ModelRegistry
+        from core.ml.training import OnlineTrainer, TrainingConfig
+        from core.ml.models import GoalsModel, HandicapModel
+        from pathlib import Path
+
+        registry_path = Path("data/ml/registry")
+        registry_path.mkdir(parents=True, exist_ok=True)
+        registry = ModelRegistry(storage_path=registry_path)
+
+        config = TrainingConfig(min_samples=10)
+        trainer = OnlineTrainer(registry, config)
+
+        # Check buffer status
+        buffer_status = trainer.get_buffer_status()
+        examples_count = buffer_status.get(request.model_name, 0)
+
+        if examples_count < config.min_samples and not request.force:
+            return MLTrainResponse(
+                success=False,
+                model_name=request.model_name,
+                version=None,
+                metrics=None,
+                error_message=f"Not enough training examples ({examples_count}/{config.min_samples}). Use force=True to train anyway.",
+            )
+
+        # Select model
+        if request.model_name == "poisson_goals":
+            model = GoalsModel()
+        elif request.model_name == "gbm_handicap":
+            model = HandicapModel()
+        else:
+            return MLTrainResponse(
+                success=False,
+                model_name=request.model_name,
+                version=None,
+                metrics=None,
+                error_message=f"Unknown model: {request.model_name}",
+            )
+
+        # Train
+        result = trainer.train_incremental(model, force=request.force)
+
+        if result.success:
+            # Register new version
+            version = registry.register(
+                model=model,
+                metrics=result.metrics,
+                model_name=request.model_name,
+            )
+            return MLTrainResponse(
+                success=True,
+                model_name=request.model_name,
+                version=version.version,
+                metrics=result.metrics,
+                error_message=None,
+            )
+        else:
+            return MLTrainResponse(
+                success=False,
+                model_name=request.model_name,
+                version=None,
+                metrics=None,
+                error_message=result.error_message,
+            )
+
+    except Exception as e:
+        logger.exception(f"ML training error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@ml_router.get("/recommendations")
+async def get_ml_recommendations(
+    sport: str = "football",
+    min_confidence: float = 0.55,
+    min_edge: float = 0.02,
+    limit: int = 10,
+):
+    """
+    Get top ML-based betting recommendations.
+
+    Filters by confidence and edge thresholds.
+    """
+    try:
+        from core.ml.tracking import AccuracyTracker
+        from pathlib import Path
+
+        tracker_path = Path("data/ml/tracking")
+        tracker = AccuracyTracker(storage_path=tracker_path) if tracker_path.exists() else None
+
+        if not tracker:
+            return {
+                "recommendations": [],
+                "message": "No tracking data available",
+            }
+
+        # Get recent predictions with good performance
+        summary = tracker.get_summary()
+
+        return {
+            "recommendations": [],  # Would come from live predictions
+            "summary": {
+                "total_predictions": summary.total_predictions,
+                "accuracy": summary.accuracy,
+                "roi": summary.roi,
+            },
+            "filters": {
+                "sport": sport,
+                "min_confidence": min_confidence,
+                "min_edge": min_edge,
+            },
+        }
+
+    except Exception as e:
+        logger.exception(f"Error getting recommendations: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@ml_router.get("/tracking/summary")
+async def get_tracking_summary(
+    model_version: Optional[str] = None,
+    market: Optional[str] = None,
+    days: int = 30,
+):
+    """
+    Get prediction tracking summary.
+    """
+    try:
+        from core.ml.tracking import AccuracyTracker
+        from pathlib import Path
+
+        tracker_path = Path("data/ml/tracking")
+        if not tracker_path.exists():
+            return {
+                "status": "no_data",
+                "message": "Tracking not initialized",
+            }
+
+        tracker = AccuracyTracker(storage_path=tracker_path)
+        summary = tracker.get_summary(model_version=model_version)
+
+        return {
+            "total_predictions": summary.total_predictions,
+            "resolved_predictions": summary.resolved_predictions,
+            "correct_predictions": summary.correct_predictions,
+            "accuracy": summary.accuracy,
+            "roi": summary.roi,
+            "calibration_error": tracker.calibration_error() if summary.resolved_predictions > 0 else None,
+        }
+
+    except Exception as e:
+        logger.exception(f"Error getting tracking summary: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@ml_router.get("/tracking/roi")
+async def get_roi_tracking(days: int = 30):
+    """
+    Get ROI tracking data.
+    """
+    try:
+        from core.ml.tracking import ROITracker
+        from pathlib import Path
+
+        tracker_path = Path("data/ml/roi")
+        if not tracker_path.exists():
+            return {
+                "status": "no_data",
+                "message": "ROI tracking not initialized",
+            }
+
+        # ROI tracker is in-memory, so we return placeholder
+        return {
+            "initial_bankroll": 1000.0,
+            "current_bankroll": 1000.0,
+            "total_bets": 0,
+            "roi": 0.0,
+            "daily_roi": [],
+        }
+
+    except Exception as e:
+        logger.exception(f"Error getting ROI tracking: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # === ENSEMBLE ENDPOINTS ===
@@ -427,7 +865,8 @@ async def health_check():
 
 def register_routers(app):
     """Register all routers with the app."""
+    app.include_router(ml_router)
     app.include_router(ensemble_router)
     app.include_router(monitoring_router)
     app.include_router(admin_router)
-    logger.info("Registered API routers: ensemble, monitoring, admin")
+    logger.info("Registered API routers: ml, ensemble, monitoring, admin")

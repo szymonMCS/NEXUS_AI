@@ -1,0 +1,22 @@
+{
+  "timestamp": "20260128_150513",
+  "models": [
+    "random_forest",
+    "mlp",
+    "gradient_boosting"
+  ],
+  "performance": {
+    "random_forest": {
+      "train_acc": 0.5713180579090842,
+      "val_acc": 0.5047275227780643
+    },
+    "mlp": {
+      "train_acc": 0.513187946658808,
+      "val_acc": 0.5023207839092315
+    },
+    "gradient_boosting": {
+      "train_acc": 0.6369630884844912,
+      "val_acc": 0.49406910778751933
+    }
+  }
+}
