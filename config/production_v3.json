@@ -1,0 +1,15 @@
+{
+  "version": "3.0",
+  "deployment_date": "2026-01-28T14:33:51.186005",
+  "ab_test_results": {
+    "test_id": "c203a0d1",
+    "samples": 100,
+    "accuracy_a": 0.8,
+    "accuracy_b": 0.94,
+    "improvement": 0.1399999999999999,
+    "p_value": 0.03769986099547631,
+    "winner": "B",
+    "confidence": 0.9623001390045237,
+    "roi_a": 200.0,
+    "roi_b": 360.0,
+    "is_significant": 

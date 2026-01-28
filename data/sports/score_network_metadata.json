@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-01-28T18:51:00.364776",
+  "source": "ScoreNetworkData (D:\\ScoreNetworkData)",
+  "sports": [
+    "tennis",
+    "basketball",
+    "american_football",
+    "baseball",
+    "hockey",
+    "soccer",
+    "mma",
+    "olympics"
+  ],
+  "total_train": 3036786,
+  "total_test": 166684,
+  "note": "Integrated from external dataset"
+}

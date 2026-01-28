@@ -31,14 +31,27 @@ class SofascoreTennisScraper:
         self.session: Optional[httpx.AsyncClient] = None
 
     async def __aenter__(self):
+        # Full browser-like headers to avoid 403 blocks
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9,pl;q=0.8",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Origin": "https://www.sofascore.com",
+            "Referer": "https://www.sofascore.com/",
+            "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Windows"',
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-site",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
         }
         self.session = httpx.AsyncClient(
             timeout=30.0,
             headers=headers,
-            follow_redirects=True
+            follow_redirects=True,
         )
         return self
 
@@ -324,7 +337,7 @@ async def scrape_tennis_match_data(
 
 async def scrape_upcoming_tennis_matches(date: Optional[str] = None) -> List[Dict]:
     """
-    Scrape upcoming tennis matches from Sofascore.
+    Scrape upcoming tennis matches from Sofascore with TheSportsDB fallback.
 
     Args:
         date: Date in YYYY-MM-DD format (defaults to today)
@@ -335,5 +348,37 @@ async def scrape_upcoming_tennis_matches(date: Optional[str] = None) -> List[Dic
     if not date:
         date = datetime.now().strftime("%Y-%m-%d")
 
+    # Try Sofascore first
     async with SofascoreTennisScraper() as scraper:
-        return await scraper.get_matches_by_date(date)
+        matches = await scraper.get_matches_by_date(date)
+        if matches:
+            return matches
+
+    # Fallback to TheSportsDB if Sofascore fails
+    print("Sofascore unavailable, falling back to TheSportsDB...")
+    try:
+        from data.apis.thesportsdb_client import TheSportsDBClient
+
+        async with TheSportsDBClient() as client:
+            events = await client.get_events_by_date(date, "Tennis")
+
+            # Convert TheSportsDB format to NEXUS format
+            matches = []
+            for event in events:
+                matches.append({
+                    "external_id": f"thesportsdb_{event.get('idEvent')}",
+                    "sport": "tennis",
+                    "home_team": event.get("strHomeTeam", ""),
+                    "away_team": event.get("strAwayTeam", ""),
+                    "league": event.get("strLeague", ""),
+                    "country": event.get("strCountry", ""),
+                    "start_time": datetime.strptime(
+                        f"{event.get('dateEvent', '')} {event.get('strTime', '00:00')}",
+                        "%Y-%m-%d %H:%M"
+                    ) if event.get("dateEvent") else None,
+                    "status": event.get("strStatus", ""),
+                })
+            return matches
+    except Exception as e:
+        print(f"TheSportsDB fallback also failed: {e}")
+        return []

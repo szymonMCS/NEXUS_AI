@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-01-28T18:45:57.420776",
+  "disciplines": [
+    {
+      "discipline": "tennis",
+      "original_samples": 500000,
+      "augmented_samples": 1000000,
+      "train_samples": 800000,
+      "test_samples": 200000,
+      "features": 100,
+      "model_results": {}
+    },
+    {
+      "discipline": "basketball",
+      "original_samples": 133416,
+      "augmented_samples": 266832,
+      "train_samples": 213465,
+      "test_samples": 53367,
+      "features": 671,
+      "model_results": {}
+    },
+    {
+      "discipline": "american_football",
+      "original_samples": 159094,
+      "augmented_samples": 318188,
+      "train_samples": 254550,
+      "test_samples": 63638,
+      "features": 435,
+      "model_results": {}
+    },
+    {
+      "discipline": "baseball",
+      "original_samples": 53244,
+      "augmented_samples": 106488,
+      "train_samples": 85190,
+      "test_samples": 21298,
+      "features": 108,
+      "model_results": {}
+    },
+    {
+      "discipline": "hockey",
+      "original_samples": 51566,
+      "augmented_samples": 103132,
+      "train_samples": 82505,
+      "test_samples": 20627,
+      "features": 69,
+      "model_results": {}
+    },
+    {
+      "discipline": "soccer",
+      "original_samples": 20427,
+      "augmented_samples": 40854,
+      "train_samples": 32683,
+      "test_samples": 8171,
+      "features": 164,
+      "model_results": {}
+    },
+    {
+      "discipline": "mma",
+      "original_samples": 101561,
+      "augmented_samples": 203122,
+      "train_samples": 162497,
+      "test_samples": 40625,
+      "features": 106,
+      "model_results": {}
+    },
+    {
+      "discipline": "olympics",
+      "original_samples": 41470,
+      "augmented_samples": 82940,
+      "train_samples": 66352,
+      "test_samples": 16588,
+      "features": 117,
+      "model_results": {}
+    }
+  ]
+}

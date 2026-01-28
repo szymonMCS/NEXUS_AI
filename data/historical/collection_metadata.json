@@ -1,0 +1,24 @@
+{
+  "collection_date": "2026-01-27T20:22:34.333105",
+  "date_range": {
+    "start": "2024-06-06T20:22:28.893703",
+    "end": "2026-01-27T20:22:28.893703"
+  },
+  "results": [
+    {
+      "collection_id": "8659852e",
+      "sport": "basketball",
+      "league": "NBA",
+      "date_range": "2024-06-06 to 2026-01-27",
+      "status": "success",
+      "total_matches": 1321,
+      "matches_with_stats": 0,
+      "matches_with_odds": 0,
+      "sources_used": [
+        "api_basketball"
+      ],
+      "errors": 0,
+      "duration_seconds": 3.36
+    }
+  ]
+}

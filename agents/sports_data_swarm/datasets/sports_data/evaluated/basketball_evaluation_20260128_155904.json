@@ -1,0 +1,47 @@
+{
+  "sport": "basketball",
+  "evaluated_at": "2026-01-28T15:59:04.042185",
+  "record_count": 1,
+  "quality_score": 25.71,
+  "quality_grade": "F (Unusable)",
+  "metrics": {
+    "completeness": {
+      "overall": 0.42857142857142855,
+      "field_rates": {
+        "game_id": 1.0,
+        "date": 1.0,
+        "home_team": 1.0,
+        "away_team": 1.0,
+        "home_score": 1.0,
+        "away_score": 1.0,
+        "home_fg_made": 0.0,
+        "home_fg_attempts": 0.0,
+        "home_rebounds": 0.0,
+        "home_assists": 0.0,
+        "away_fg_made": 0.0,
+        "away_fg_attempts": 0.0,
+        "away_rebounds": 0.0,
+        "away_assists": 0.0
+      }
+    },
+    "consistency": {
+      "rate": 0.0,
+      "issues": [
+        "Record 0: Quarter total mismatch for home team"
+      ]
+    },
+    "statistical_distribution": {
+      "avg_total_score": 200,
+      "score_std": 0,
+      "score_range": [
+        200,
+        200
+      ]
+    },
+    "home_win_rate": 1.0
+  },
+  "recommendations": [
+    "Improve completeness for fields: ['home_fg_made', 'home_fg_attempts', 'home_rebounds', 'home_assists', 'away_fg_made']",
+    "Address data consistency issues"
+  ]
+}

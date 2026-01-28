@@ -1,0 +1,12 @@
+{
+  "training_date": "2026-01-27T20:22:45.394616",
+  "data_directory": "data\\historical",
+  "total_matches": 1321,
+  "training_examples": 1056,
+  "validation_examples": 265,
+  "models_trained": [
+    "goals_model",
+    "handicap_model"
+  ],
+  "sport_filter": "basketball"
+}

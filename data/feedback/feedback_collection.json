@@ -1,0 +1,1302 @@
+[
+  {
+    "timestamp": "2026-01-28T14:33:50.607822",
+    "match_id": "feedback_0000",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.608738",
+    "match_id": "feedback_0001",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.609462",
+    "match_id": "feedback_0002",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.610161",
+    "match_id": "feedback_0003",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.610531",
+    "match_id": "feedback_0004",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.611020",
+    "match_id": "feedback_0005",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.611564",
+    "match_id": "feedback_0006",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.612027",
+    "match_id": "feedback_0007",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": false
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.612468",
+    "match_id": "feedback_0008",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.612888",
+    "match_id": "feedback_0009",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.613363",
+    "match_id": "feedback_0010",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": false
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.613939",
+    "match_id": "feedback_0011",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.614402",
+    "match_id": "feedback_0012",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.614839",
+    "match_id": "feedback_0013",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.615239",
+    "match_id": "feedback_0014",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.615707",
+    "match_id": "feedback_0015",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.616127",
+    "match_id": "feedback_0016",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.616509",
+    "match_id": "feedback_0017",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.616953",
+    "match_id": "feedback_0018",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.617401",
+    "match_id": "feedback_0019",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.617950",
+    "match_id": "feedback_0020",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.618339",
+    "match_id": "feedback_0021",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.618719",
+    "match_id": "feedback_0022",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.619105",
+    "match_id": "feedback_0023",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.619553",
+    "match_id": "feedback_0024",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.619978",
+    "match_id": "feedback_0025",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.620417",
+    "match_id": "feedback_0026",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.620800",
+    "match_id": "feedback_0027",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": false
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.621247",
+    "match_id": "feedback_0028",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.621663",
+    "match_id": "feedback_0029",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.622341",
+    "match_id": "feedback_0030",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.623525",
+    "match_id": "feedback_0031",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": false
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.624517",
+    "match_id": "feedback_0032",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.625321",
+    "match_id": "feedback_0033",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": false
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.626033",
+    "match_id": "feedback_0034",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.626712",
+    "match_id": "feedback_0035",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.627356",
+    "match_id": "feedback_0036",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.628050",
+    "match_id": "feedback_0037",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.628512",
+    "match_id": "feedback_0038",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.629091",
+    "match_id": "feedback_0039",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.629670",
+    "match_id": "feedback_0040",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.630100",
+    "match_id": "feedback_0041",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": false
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.630470",
+    "match_id": "feedback_0042",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": false
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.630912",
+    "match_id": "feedback_0043",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.631373",
+    "match_id": "feedback_0044",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.631862",
+    "match_id": "feedback_0045",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.632241",
+    "match_id": "feedback_0046",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.632571",
+    "match_id": "feedback_0047",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.632894",
+    "match_id": "feedback_0048",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.633214",
+    "match_id": "feedback_0049",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.633545",
+    "match_id": "feedback_0050",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.633886",
+    "match_id": "feedback_0051",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.634269",
+    "match_id": "feedback_0052",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.634677",
+    "match_id": "feedback_0053",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.635021",
+    "match_id": "feedback_0054",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.635350",
+    "match_id": "feedback_0055",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.635698",
+    "match_id": "feedback_0056",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.636026",
+    "match_id": "feedback_0057",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.636348",
+    "match_id": "feedback_0058",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.636679",
+    "match_id": "feedback_0059",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.637063",
+    "match_id": "feedback_0060",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.637383",
+    "match_id": "feedback_0061",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": false
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.637717",
+    "match_id": "feedback_0062",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.675816",
+    "match_id": "feedback_0063",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.676686",
+    "match_id": "feedback_0064",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.677410",
+    "match_id": "feedback_0065",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.678104",
+    "match_id": "feedback_0066",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.678688",
+    "match_id": "feedback_0067",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.679237",
+    "match_id": "feedback_0068",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.679886",
+    "match_id": "feedback_0069",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.680560",
+    "match_id": "feedback_0070",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.681347",
+    "match_id": "feedback_0071",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.682001",
+    "match_id": "feedback_0072",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.682509",
+    "match_id": "feedback_0073",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.743225",
+    "match_id": "feedback_0074",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.743836",
+    "match_id": "feedback_0075",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.744298",
+    "match_id": "feedback_0076",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.744727",
+    "match_id": "feedback_0077",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.745152",
+    "match_id": "feedback_0078",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.745501",
+    "match_id": "feedback_0079",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": false
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.745927",
+    "match_id": "feedback_0080",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.746291",
+    "match_id": "feedback_0081",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.746634",
+    "match_id": "feedback_0082",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.746972",
+    "match_id": "feedback_0083",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.747305",
+    "match_id": "feedback_0084",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.807646",
+    "match_id": "feedback_0085",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.808233",
+    "match_id": "feedback_0086",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.808716",
+    "match_id": "feedback_0087",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": false
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.809229",
+    "match_id": "feedback_0088",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.809772",
+    "match_id": "feedback_0089",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": false
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.810315",
+    "match_id": "feedback_0090",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.810703",
+    "match_id": "feedback_0091",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.811110",
+    "match_id": "feedback_0092",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.811454",
+    "match_id": "feedback_0093",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.811796",
+    "match_id": "feedback_0094",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.812601",
+    "match_id": "feedback_0095",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.877510",
+    "match_id": "feedback_0096",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.878338",
+    "match_id": "feedback_0097",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.879123",
+    "match_id": "feedback_0098",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": false
+  },
+  {
+    "timestamp": "2026-01-28T14:33:50.879839",
+    "match_id": "feedback_0099",
+    "predicted": "home",
+    "confidence": 0.3,
+    "home_prob": 0.4,
+    "draw_prob": 0.2,
+    "away_prob": 0.4,
+    "models_used": [
+      "rf"
+    ],
+    "was_correct": true
+  }
+]
