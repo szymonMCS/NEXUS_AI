@@ -82,6 +82,22 @@ plans/
 NEXUS_AI_Lite_Specyfikacja.md
 NEXUS_AI_v2_Pelna_Implementacja.md
 
+# Additional documentation (not in repo)
+IMPLEMENTATION_REPORT.md
+ML_RESEARCH_IMPLEMENTATION.md
+PRODUCTION_DEPLOYMENT_REPORT.md
+SCORE_NETWORK_DATA_REPORT.md
+TRAINING_REPORT.md
+BETTING_SPORTS_ANALYSIS.md
+CUTTING_EDGE_DEPLOYMENT.md
+frontend/ARCHITECTURE.md
+frontend/QUALITY_REPORT.md
+frontend/REFACTORING_SUMMARY.md
+frontend/UI_UPGRADE_DOCUMENTATION.md
+reports/sports_apis_research.md
+reports/templates/
+sport_datasets_AI_report.md
+
 # Resource folders (drafts and templates)
 backend_draft/
 
