@@ -1,0 +1,525 @@
+/**
+ * NEXUS AI Sports Theme
+ * 
+ * Dynamic, energetic design inspired by:
+ * - Sports broadcasts (ESPN, Sky Sports)
+ * - Stadium atmosphere
+ * - Team colors and energy
+ * - Live scoreboards
+ * 
+ * Keywords: dynamic, energetic, competitive, vibrant
+ */
+
+/* ========================================
+   SPORTS COLOR PALETTE
+   ======================================== */
+
+:root {
+  /* Primary - Electric Blue (Energy, Technology) */
+  --sport-primary: 217 91% 60%;
+  --sport-primary-light: 217 91% 70%;
+  --sport-primary-dark: 217 91% 50%;
+  --sport-primary-glow: 217 91% 60% / 0.3;
+  
+  /* Secondary - Electric Green (Success, Victory) */
+  --sport-secondary: 142 71% 45%;
+  --sport-secondary-light: 142 71% 55%;
+  --sport-secondary-glow: 142 71% 45% / 0.3;
+  
+  /* Accent - Hot Orange (Intensity, Action) */
+  --sport-accent: 25 95% 53%;
+  --sport-accent-light: 25 95% 63%;
+  --sport-accent-glow: 25 95% 53% / 0.3;
+  
+  /* Alert - Stadium Red (Danger, Warning) */
+  --sport-alert: 0 84% 60%;
+  --sport-alert-glow: 0 84% 60% / 0.3;
+  
+  /* Backgrounds - Dark Stadium Theme */
+  --sport-bg: 220 20% 8%;
+  --sport-bg-elevated: 220 20% 12%;
+  --sport-bg-card: 220 20% 14%;
+  --sport-bg-header: 220 25% 6%;
+  
+  /* Text */
+  --sport-text: 0 0% 100%;
+  --sport-text-muted: 220 15% 60%;
+  --sport-text-dim: 220 15% 40%;
+  
+  /* Borders */
+  --sport-border: 220 20% 20%;
+  --sport-border-glow: 217 91% 60% / 0.2;
+  
+  /* Gradients */
+  --gradient-blue: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(200 100% 50%) 100%);
+  --gradient-green: linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(160 80% 50%) 100%);
+  --gradient-orange: linear-gradient(135deg, hsl(25 95% 53%) 0%, hsl(35 100% 60%) 100%);
+  --gradient-dark: linear-gradient(180deg, hsl(220 20% 12%) 0%, hsl(220 20% 8%) 100%);
+  --gradient-card: linear-gradient(145deg, hsl(220 20% 16%) 0%, hsl(220 20% 12%) 100%);
+  
+  /* Shadows with Glow */
+  --shadow-glow-blue: 0 0 20px hsl(217 91% 60% / 0.3), 0 0 40px hsl(217 91% 60% / 0.1);
+  --shadow-glow-green: 0 0 20px hsl(142 71% 45% / 0.3), 0 0 40px hsl(142 71% 45% / 0.1);
+  --shadow-glow-orange: 0 0 20px hsl(25 95% 53% / 0.3), 0 0 40px hsl(25 95% 53% / 0.1);
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 5px hsl(var(--sport-primary) / 0.5),
+                0 0 10px hsl(var(--sport-primary) / 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 15px hsl(var(--sport-primary) / 0.8),
+                0 0 30px hsl(var(--sport-primary) / 0.5);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes score-update {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); color: hsl(var(--sport-accent)); }
+  100% { transform: scale(1); }
+}
+
+@keyframes live-pulse {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes border-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.4s ease-out;
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.4s ease-out;
+}
+
+.animate-score-update {
+  animation: score-update 0.3s ease-out;
+}
+
+.animate-live-pulse {
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ========================================
+   SPORTS CARD STYLES
+   ======================================== */
+
+.sport-card {
+  background: var(--gradient-card);
+  border: 1px solid hsl(var(--sport-border));
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.sport-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gradient-blue);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sport-card:hover {
+  border-color: hsl(var(--sport-primary) / 0.5);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow-blue);
+}
+
+.sport-card:hover::before {
+  opacity: 1;
+}
+
+.sport-card-active {
+  border-color: hsl(var(--sport-primary));
+  box-shadow: var(--shadow-glow-blue);
+}
+
+.sport-card-active::before {
+  opacity: 1;
+}
+
+/* Gradient Borders */
+.sport-border-gradient {
+  position: relative;
+  background: hsl(var(--sport-bg-card));
+  border-radius: 12px;
+}
+
+.sport-border-gradient::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, 
+    hsl(var(--sport-primary)), 
+    hsl(var(--sport-secondary)), 
+    hsl(var(--sport-accent))
+  );
+  background-size: 300% 300%;
+  animation: border-flow 4s ease infinite;
+  z-index: -1;
+}
+
+/* ========================================
+   SPORTS BUTTONS
+   ======================================== */
+
+.sport-btn {
+  position: relative;
+  padding: 10px 20px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.sport-btn-primary {
+  background: var(--gradient-blue);
+  color: white;
+  border: none;
+}
+
+.sport-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow-blue);
+}
+
+.sport-btn-success {
+  background: var(--gradient-green);
+  color: white;
+  border: none;
+}
+
+.sport-btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow-green);
+}
+
+.sport-btn-accent {
+  background: var(--gradient-orange);
+  color: white;
+  border: none;
+}
+
+.sport-btn-accent:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow-orange);
+}
+
+/* ========================================
+   LIVE INDICATORS
+   ======================================== */
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: hsl(var(--sport-alert) / 0.2);
+  border: 1px solid hsl(var(--sport-alert));
+  border-radius: 20px;
+  color: hsl(var(--sport-alert));
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.live-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: hsl(var(--sport-alert));
+  border-radius: 50%;
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+
+/* Score Display */
+.score-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #fff 0%, hsl(var(--sport-text-muted)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.score-highlight {
+  color: hsl(var(--sport-accent));
+  text-shadow: 0 0 20px hsl(var(--sport-accent-glow));
+}
+
+/* ========================================
+   STATS & METRICS
+   ======================================== */
+
+.stat-box {
+  background: hsl(var(--sport-bg-elevated));
+  border: 1px solid hsl(var(--sport-border));
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.stat-box:hover {
+  border-color: hsl(var(--sport-primary) / 0.5);
+  transform: scale(1.02);
+}
+
+.stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: hsl(var(--sport-text));
+}
+
+.stat-value.positive {
+  color: hsl(var(--sport-secondary));
+  text-shadow: 0 0 10px hsl(var(--sport-secondary-glow));
+}
+
+.stat-value.negative {
+  color: hsl(var(--sport-alert));
+  text-shadow: 0 0 10px hsl(var(--sport-alert-glow));
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: hsl(var(--sport-text-muted));
+  margin-top: 4px;
+}
+
+/* ========================================
+   PROGRESS BARS & METERS
+   ======================================== */
+
+.progress-sport {
+  height: 6px;
+  background: hsl(var(--sport-bg-elevated));
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-sport-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+  position: relative;
+}
+
+.progress-sport-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+.progress-blue { background: var(--gradient-blue); }
+.progress-green { background: var(--gradient-green); }
+.progress-orange { background: var(--gradient-orange); }
+
+/* ========================================
+   TEAM COLORS & MATCHUPS
+   ======================================== */
+
+.team-home {
+  color: hsl(var(--sport-primary));
+}
+
+.team-away {
+  color: hsl(var(--sport-secondary));
+}
+
+.vs-divider {
+  font-size: 0.875rem;
+  color: hsl(var(--sport-text-dim));
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.matchup-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: var(--gradient-card);
+  border: 1px solid hsl(var(--sport-border));
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.matchup-card:hover {
+  border-color: hsl(var(--sport-primary) / 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* ========================================
+   ODDS & BETTING DISPLAYS
+   ======================================== */
+
+.odds-box {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 16px;
+  background: hsl(var(--sport-bg-elevated));
+  border: 1px solid hsl(var(--sport-border));
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.odds-box:hover {
+  border-color: hsl(var(--sport-accent));
+  transform: translateY(-2px);
+}
+
+.odds-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: hsl(var(--sport-text));
+}
+
+.odds-value.best {
+  color: hsl(var(--sport-secondary));
+}
+
+.odds-label {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  color: hsl(var(--sport-text-muted));
+}
+
+.edge-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.edge-positive {
+  background: hsl(var(--sport-secondary) / 0.2);
+  color: hsl(var(--sport-secondary));
+}
+
+.edge-negative {
+  background: hsl(var(--sport-alert) / 0.2);
+  color: hsl(var(--sport-alert));
+}
+
+/* ========================================
+   SPORT-SPECIFIC ICON BACKGROUNDS
+   ======================================== */
+
+.icon-bg-football {
+  background: linear-gradient(135deg, #1a5f2a 0%, #0d3d1a 100%);
+}
+
+.icon-bg-basketball {
+  background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+}
+
+.icon-bg-tennis {
+  background: linear-gradient(135deg, #84cc16 0%, #4d7c0f 100%);
+}
+
+.icon-bg-baseball {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+/* ========================================
+   SCROLLBAR STYLING
+   ======================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--sport-bg));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--sport-border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--sport-primary));
+}

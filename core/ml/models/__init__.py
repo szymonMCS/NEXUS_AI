@@ -1,42 +1,43 @@
 """
-ML Models Package.
-
-Available models:
-- GoalsModel: Poisson regression for goals prediction
-- HandicapModel: GBM for handicap/spread prediction
-- RandomForestEnsembleModel: RF ensemble (Research: 81.9% accuracy)
-- MLPNeuralNetworkModel: Deep neural network (Research: 86.7% accuracy)
+ML Models for NEXUS AI.
 """
 
-from core.ml.models.interface import MLModelInterface
-from core.ml.models.predictions import (
+# Import base classes directly from v2
+from core.ml.v2.models_base import (
+    BasePredictor,
     PredictionResult,
-    GoalsPrediction,
-    HandicapPrediction,
-    ModelInfo,
-)
-from core.ml.models.goals_model import GoalsModel, PoissonParameters
-from core.ml.models.handicap_model import HandicapModel
-from core.ml.models.random_forest_model import (
-    RandomForestEnsembleModel,
-    RFParameters,
-)
-from core.ml.models.mlp_model import (
-    MLPNeuralNetworkModel,
-    MLPParameters,
+    ModelMetadata,
+    EnsemblePredictor
 )
 
+# Statistical models
+from core.ml.v2.statistical_models import (
+    StatisticalEnsemble,
+    EloPredictor,
+    FormPredictor
+)
+
+# Try sklearn models
+try:
+    from core.ml.models.sklearn_models import (
+        RandomForestPredictor,
+        GradientBoostingPredictor
+    )
+    SKLEARN_AVAILABLE = True
+except ImportError:
+    RandomForestPredictor = None
+    GradientBoostingPredictor = None
+    SKLEARN_AVAILABLE = False
+
 __all__ = [
-    "MLModelInterface",
-    "PredictionResult",
-    "GoalsPrediction",
-    "HandicapPrediction",
-    "ModelInfo",
-    "GoalsModel",
-    "PoissonParameters",
-    "HandicapModel",
-    "RandomForestEnsembleModel",
-    "RFParameters",
-    "MLPNeuralNetworkModel",
-    "MLPParameters",
+    'BasePredictor',
+    'PredictionResult',
+    'ModelMetadata',
+    'EnsemblePredictor',
+    'StatisticalEnsemble',
+    'EloPredictor',
+    'FormPredictor',
+    'RandomForestPredictor',
+    'GradientBoostingPredictor',
+    'SKLEARN_AVAILABLE',
 ]

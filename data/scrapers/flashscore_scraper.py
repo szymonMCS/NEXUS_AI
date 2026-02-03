@@ -469,3 +469,43 @@ async def scrape_flashscore_odds(match_id: str) -> Dict:
 
     async with FlashscoreScraper() as scraper:
         return await scraper.get_match_odds(match_id)
+
+
+async def get_upcoming_matches(sport: str, league: str = None) -> List[Dict]:
+    """
+    Get upcoming matches for scheduler.
+    
+    Args:
+        sport: Sport type
+        league: Optional league filter
+        
+    Returns:
+        List of upcoming match dicts with odds
+    """
+    if not PLAYWRIGHT_AVAILABLE:
+        logger.warning("Playwright not available for get_upcoming_matches")
+        return []
+    
+    # Add delay to avoid rate limiting
+    await asyncio.sleep(1)
+    
+    try:
+        async with FlashscoreScraper(headless=True, timeout=30000) as scraper:
+            fixtures = await scraper.get_fixtures(sport)
+            
+            # Filter by league if specified
+            if league:
+                fixtures = [f for f in fixtures if league.lower() in f.get('league', '').lower()]
+            
+            # Limit to avoid overwhelming the system
+            fixtures = fixtures[:20]
+            
+            # Add mock odds for now (in production would scrape actual odds)
+            for f in fixtures:
+                f['odds'] = {'home': 1.85, 'away': 1.95}
+            
+            return fixtures
+            
+    except Exception as e:
+        logger.error(f"Error getting upcoming matches: {e}")
+        return []

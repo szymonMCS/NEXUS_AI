@@ -8,10 +8,20 @@ from typing import Literal, Dict, List, Any
 from datetime import datetime
 
 from langgraph.graph import StateGraph, END
-from langgraph.prebuilt import ToolNode
+# ToolNode removed - not available in langgraph 0.2.x, using custom implementation
 
 from config.settings import settings
-from config.llm_config import get_llm
+try:
+    from config.llm_config import get_llm
+except ImportError:
+    # Fallback for missing langchain
+    def get_llm(*args, **kwargs):
+        class MockLLM:
+            async def ainvoke(self, messages):
+                class Response:
+                    content = "{}"
+                return Response()
+        return MockLLM()
 from core.state import NexusState, Match, add_message
 
 

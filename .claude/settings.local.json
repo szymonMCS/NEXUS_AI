@@ -29,7 +29,10 @@
       "Bash(python:*)",
       "WebFetch(domain:platform.moonshot.ai)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:www.nature.com)"
+      "WebFetch(domain:www.nature.com)",
+      "Bash(tree:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite build:*)"
     ]
   }
 }

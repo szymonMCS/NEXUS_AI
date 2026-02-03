@@ -1,0 +1,15 @@
+{
+  "tennis": {
+    "total_matches": 1,
+    "correct_predictions": 0,
+    "accuracy": 0.0,
+    "last_updated": "2026-02-03T14:50:27.307084",
+    "recent_results": [
+      {
+        "match_id": "test_001",
+        "correct": null,
+        "date": "2026-02-03T14:50:27.306174"
+      }
+    ]
+  }
+}

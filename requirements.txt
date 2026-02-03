@@ -25,6 +25,10 @@ httpx>=0.27.0
 aiohttp>=3.9.0
 requests>=2.31.0
 
+# Authentication (Clerk)
+pyjwt>=2.8.0
+cryptography>=42.0.0  # Required for JWT RS256 verification
+
 # === WEB SCRAPING (Lite mode) ===
 beautifulsoup4>=4.12.0
 lxml>=5.0.0  # Fast XML/HTML parser

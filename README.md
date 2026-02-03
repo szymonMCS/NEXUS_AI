@@ -66,10 +66,15 @@ Advanced Sports Prediction System powered by LangGraph, MCP, Statistical Models,
 
 ## 📋 Requirements
 
+### Backend Requirements:
 - Python 3.11+
 - Redis (for caching)
 - PostgreSQL (recommended) or SQLite
 - API Keys (see `.env.example`)
+
+### Frontend Requirements:
+- Node.js 18+ (recommended: 20 LTS)
+- npm 9+ or yarn 1.22+
 
 ---
 
@@ -114,9 +119,46 @@ python main.py --port 8000
 ```
 
 ### Run the React Frontend:
+
+1. **Install dependencies** (first time only):
 ```bash
 cd frontend/app
+npm install
+```
+
+2. **Set up environment variables**:
+```bash
+cp .env.example .env
+# Edit .env and add your Clerk API keys for authentication
+```
+
+3. **Start development server**:
+```bash
 npm run dev
+```
+
+4. **Open in browser**:
+```
+http://localhost:5173
+```
+
+The frontend will proxy API requests to `http://localhost:8000` automatically.
+
+### Frontend Build Commands:
+```bash
+cd frontend/app
+
+# Development server with hot reload
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build locally
+npm run preview
+
+# Run linting
+npm run lint
 ```
 
 ### Run Development Mode:
@@ -268,13 +310,37 @@ nexus/
 │   ├── score_network/     # 8 disciplines × 2 models
 │   └── trained/           # Football-Data models
 │
+├── frontend/app/          # React + TypeScript + Vite frontend
+│   ├── src/
+│   │   ├── components/    # React components
+│   │   │   ├── ui/        # shadcn/ui components
+│   │   │   ├── analytics/ # KPI cards, charts, gauges
+│   │   │   ├── reports/   # Report sections
+│   │   │   └── layout/    # AppShell, PageLayout
+│   │   ├── pages/         # Application pages
+│   │   │   ├── app/       # Authenticated pages
+│   │   │   │   ├── DashboardPage.tsx
+│   │   │   │   ├── PredictionsPage.tsx
+│   │   │   │   ├── HandicapsPage.tsx
+│   │   │   │   ├── ReportsPage.tsx
+│   │   │   │   ├── ModelsPage.tsx
+│   │   │   │   ├── StatisticsPage.tsx
+│   │   │   │   └── HistoryPage.tsx
+│   │   │   ├── LandingPage.tsx
+│   │   │   ├── SignInPage.tsx
+│   │   │   └── SignUpPage.tsx
+│   │   ├── hooks/         # Custom React hooks
+│   │   ├── lib/           # Utilities, API clients
+│   │   └── styles/        # CSS styles
+│   ├── package.json
+│   └── vite.config.ts
+│
 ├── scripts/               # Utility scripts
 │   ├── full_production_pipeline.py
 │   ├── train_score_network_models.py
 │   ├── organize_and_train_score_data.py
 │   └── integrate_score_network_to_nexus.py
 │
-├── frontend/app/          # React frontend
 ├── tests/                 # Unit and integration tests
 ├── main.py               # Main entry point
 ├── pyproject.toml        # Project configuration

@@ -1,4 +1,4 @@
-/* Custom App Styles */
+/* Custom App Styles - NEXUS AI Professional Theme */
 
 /* Smooth scrolling for the entire page */
 html {
@@ -33,4 +33,194 @@ html {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* ========================================
+   PROFESSIONAL UTILITY ANIMATIONS
+   ======================================== */
+
+/* Subtle fade in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Slide up animation */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Subtle pulse for live indicators */
+@keyframes subtle-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-subtle-pulse {
+  animation: subtle-pulse 2s ease-in-out infinite;
+}
+
+/* Shimmer effect for loading states */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ========================================
+   SCROLLBAR STYLING
+   ======================================== */
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ========================================
+   FOCUS STATES
+   ======================================== */
+
+/* Professional focus ring */
+.focus-ring:focus-visible {
+  outline: none;
+  ring: 2px;
+  ring-color: #00d4ff;
+  ring-offset: 2px;
+  ring-offset-color: #0a0e1a;
+}
+
+/* ========================================
+   TEXT UTILITIES
+   ======================================== */
+
+/* Monospace numbers for data */
+.font-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Professional text shadow for readability */
+.text-shadow {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* ========================================
+   GLASS MORPHISM
+   ======================================== */
+
+.glass {
+  background: rgba(15, 22, 35, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ========================================
+   CARD HOVER EFFECTS
+   ======================================== */
+
+.card-hover {
+  transition: all 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* ========================================
+   TABLE STYLING
+   ======================================== */
+
+/* Professional table hover effect */
+.table-row-hover {
+  transition: background-color 0.15s ease;
+}
+
+.table-row-hover:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* ========================================
+   STATUS INDICATORS
+   ======================================== */
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot-live {
+  background-color: #ff3860;
+  box-shadow: 0 0 8px rgba(255, 56, 96, 0.5);
+  animation: subtle-pulse 2s ease-in-out infinite;
+}
+
+.status-dot-success {
+  background-color: #00ff88;
+}
+
+.status-dot-warning {
+  background-color: #ff9500;
+}
+
+.status-dot-neutral {
+  background-color: #64748b;
 }

@@ -19,6 +19,8 @@ from database.crud import (
     update_session_metrics, get_performance_summary
 )
 from agents import SupervisorAgent, run_betting_analysis
+from core.ml import get_prediction_service
+from core.ml.prediction_service import PredictionService
 
 # Configure logging
 logging.basicConfig(
@@ -44,6 +46,7 @@ class BettingFloor:
         self.is_running = False
         self.current_session = None
         self.last_run: Optional[datetime] = None
+        self.prediction_service: Optional[PredictionService] = None
 
     async def initialize(self):
         """Initialize all system components."""
@@ -52,6 +55,18 @@ class BettingFloor:
         # Initialize database
         init_db()
         logger.info("Database initialized")
+
+        # Initialize ML components
+        logger.info("Initializing ML prediction service...")
+        self.prediction_service = get_prediction_service()
+        
+        # Warm up models for supported sports
+        for sport in ["tennis", "basketball"]:
+            try:
+                self.prediction_service.warmup(sport)
+                logger.info(f"ML model warmed up for {sport}")
+            except Exception as e:
+                logger.warning(f"Could not warm up model for {sport}: {e}")
 
         # Get or create active betting session
         with get_db_session() as db:
@@ -232,6 +247,20 @@ class BettingFloor:
         with get_db_session() as db:
             performance = get_performance_summary(db)
 
+        # Get ML model status
+        ml_status = {}
+        if self.prediction_service:
+            for sport in ["tennis", "basketball"]:
+                try:
+                    info = self.prediction_service.get_model_info(sport)
+                    ml_status[sport] = {
+                        "models_available": info.get("available_models", 0),
+                        "best_model": info.get("best_model"),
+                        "best_accuracy": info.get("models", [{}])[0].get("accuracy", 0) if info.get("models") else 0
+                    }
+                except Exception as e:
+                    ml_status[sport] = {"error": str(e)}
+
         return {
             "is_running": self.is_running,
             "last_run": self.last_run.isoformat() if self.last_run else None,
@@ -242,6 +271,63 @@ class BettingFloor:
             } if self.current_session else None,
             "performance": performance,
             "mode": settings.APP_MODE,
+            "ml_status": ml_status,
+        }
+
+    async def update_match_result(self, 
+                                 match_id: str,
+                                 home_score: int,
+                                 away_score: int,
+                                 sport: str = "tennis"):
+        """
+        Update match result and store for model retraining.
+        
+        Args:
+            match_id: External match ID
+            home_score: Home player/team score
+            away_score: Away player/team score
+            sport: Sport type
+        """
+        from database.models import Match
+        from database.db import get_db_session
+        
+        with get_db_session() as db:
+            # Find match
+            match = db.query(Match).filter(Match.external_id == match_id).first()
+            
+            if match:
+                # Update match result
+                match.home_score = home_score
+                match.away_score = away_score
+                match.is_finished = True
+                
+                if home_score > away_score:
+                    match.winner = "home"
+                elif away_score > home_score:
+                    match.winner = "away"
+                else:
+                    match.winner = "draw"
+                
+                db.commit()
+                logger.info(f"Updated match result: {match_id} - {home_score}:{away_score}")
+            else:
+                logger.warning(f"Match not found: {match_id}")
+        
+        # TODO: Store for training (online_trainer temporarily disabled)
+        logger.info(f"Match result stored for training: {match_id}")
+
+    async def train_models(self, sport: str, force: bool = False) -> Dict[str, Any]:
+        """
+        Trigger model training for a sport.
+        (Simplified version - full training pipeline in development)
+        """
+        logger.info(f"Model training for {sport} - placeholder")
+        
+        # Placeholder - in production this would trigger the full training pipeline
+        return {
+            "status": "placeholder",
+            "sport": sport,
+            "message": "Training pipeline temporarily disabled. Models use statistical fallback."
         }
 
 

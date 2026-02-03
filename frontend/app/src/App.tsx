@@ -1,81 +1,154 @@
-import { Routes, Route, useLocation } from 'react-router-dom';
-import { Navigation } from '@/sections/Navigation';
-import { Hero } from '@/sections/Hero';
-import { Stats } from '@/sections/Stats';
-import { ValueBets } from '@/sections/ValueBets';
-import { LivePredictions } from '@/sections/LivePredictions';
-import { BettingBot } from '@/sections/BettingBot';
-import { HowItWorks } from '@/sections/HowItWorks';
-import { Blog } from '@/sections/Blog';
-import { FAQ } from '@/sections/FAQ';
-import { Footer } from '@/sections/Footer';
-import { Dashboard, AnalysisPage, ValueBetsPage, ReportsPage, SettingsPage, SignInPage, SignUpPage } from '@/pages';
+/**
+ * NEXUS AI - Professional Sports Prediction Platform
+ * 
+ * Main App Router
+ * - Landing page at root
+ * - App shell with sidebar navigation for all internal pages
+ * - Consistent layout and navigation across all pages
+ * - Clerk authentication integration
+ */
+
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { AppShell } from '@/components/layout';
+import { AtmosphericBackground } from '@/components/AtmosphericBackground';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+
+// App Pages
+import {
+  DashboardPage,
+  MatchesPage,
+  HandicapsPage,
+  ReportsPage,
+  ModelsPage,
+  StatisticsPage,
+  HistoryPage,
+  PredictionsPage,
+  SettingsPage,
+  DocumentationPage,
+} from '@/pages/app';
+
+// Legacy Pages (to be refactored)
+import { LandingPage } from '@/pages/LandingPage';
+import { SignInPage } from '@/pages/SignInPage';
+import { SignUpPage } from '@/pages/SignUpPage';
+
 import './App.css';
 
-// Landing Page component
-function LandingPage() {
+// Route to page ID mapping for sidebar highlighting
+const routeToPageId: Record<string, string> = {
+  '/app': 'dashboard',
+  '/app/': 'dashboard',
+  '/app/predictions': 'predictions',
+  '/app/matches': 'matches',
+  '/app/handicaps': 'handicaps',
+  '/app/statistics': 'statistics',
+  '/app/reports': 'reports',
+  '/app/models': 'models',
+  '/app/history': 'history',
+  '/app/settings': 'settings',
+  '/app/docs': 'docs',
+};
+
+// App Shell wrapper for all app pages
+function AppLayout({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const currentPage = routeToPageId[location.pathname] || 'dashboard';
+
   return (
-    <>
-      <Hero />
-      <Stats />
-      <ValueBets />
-      <LivePredictions />
-      <BettingBot />
-      <HowItWorks />
-      <Blog />
-      <FAQ />
-    </>
+    <div className="min-h-screen relative">
+      <AtmosphericBackground />
+      <div className="relative z-10">
+        <AppShell 
+          currentPage={currentPage}
+          onNavigate={(href) => navigate(href)}
+        >
+          {children}
+        </AppShell>
+      </div>
+    </div>
   );
 }
 
 function App() {
-  const location = useLocation();
-  const isAuthPage = location.pathname.startsWith('/sign-');
-
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hide navigation on auth pages */}
-      {!isAuthPage && <Navigation />}
-      <main>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/sign-in/*" element={<SignInPage />} />
-          <Route path="/sign-up/*" element={<SignUpPage />} />
-
-          {/* Protected routes */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/analysis" element={
-            <ProtectedRoute>
-              <AnalysisPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/value-bets" element={
-            <ProtectedRoute>
-              <ValueBetsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/reports" element={
-            <ProtectedRoute>
-              <ReportsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/settings" element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          } />
-          {/* Bot route redirects to landing page bot section for now */}
-          <Route path="/bot" element={<LandingPage />} />
-        </Routes>
-      </main>
-      {/* Hide footer on auth pages */}
-      {!isAuthPage && <Footer />}
+    <div className="min-h-screen bg-[#0a0e1a]">
+      <Routes>
+        {/* Landing page - main entry (public) */}
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* Auth routes (public) */}
+        <Route path="/sign-in/*" element={<SignInPage />} />
+        <Route path="/sign-up/*" element={<SignUpPage />} />
+        
+        {/* App routes with sidebar layout - PROTECTED */}
+        <Route path="/app" element={
+          <ProtectedRoute>
+            <AppLayout><DashboardPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/app/predictions" element={
+          <ProtectedRoute>
+            <AppLayout><PredictionsPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/app/matches" element={
+          <ProtectedRoute>
+            <AppLayout><MatchesPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/app/handicaps" element={
+          <ProtectedRoute>
+            <AppLayout><HandicapsPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/app/statistics" element={
+          <ProtectedRoute>
+            <AppLayout><StatisticsPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/app/reports" element={
+          <ProtectedRoute>
+            <AppLayout><ReportsPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/app/models" element={
+          <ProtectedRoute>
+            <AppLayout><ModelsPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/app/history" element={
+          <ProtectedRoute>
+            <AppLayout><HistoryPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/app/settings" element={
+          <ProtectedRoute>
+            <AppLayout><SettingsPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/app/docs" element={
+          <ProtectedRoute>
+            <AppLayout><DocumentationPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        
+        {/* Legacy routes - redirect to new structure - PROTECTED */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <AppLayout><DashboardPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/analysis" element={
+          <ProtectedRoute>
+            <AppLayout><ReportsPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        
+        {/* Fallback */}
+        <Route path="*" element={<LandingPage />} />
+      </Routes>
     </div>
   );
 }

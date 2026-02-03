@@ -1,0 +1,17 @@
+[
+  {
+    "match_id": "test_001",
+    "sport": "tennis",
+    "home_player": "Djokovic",
+    "away_player": "Alcaraz",
+    "home_score": 2,
+    "away_score": 1,
+    "match_date": "2026-02-03 14:50:27.306174",
+    "prediction_home_prob": null,
+    "prediction_away_prob": null,
+    "prediction_confidence": null,
+    "actual_result": "home",
+    "prediction_correct": null,
+    "recorded_at": "2026-02-03T14:50:27.306253"
+  }
+]

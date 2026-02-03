@@ -869,4 +869,21 @@ def register_routers(app):
     app.include_router(ensemble_router)
     app.include_router(monitoring_router)
     app.include_router(admin_router)
-    logger.info("Registered API routers: ml, ensemble, monitoring, admin")
+    
+    # Register Forebet scraper router if available
+    try:
+        from api.forebet_router import router as forebet_router
+        app.include_router(forebet_router)
+        logger.info("Registered Forebet router")
+    except ImportError as e:
+        logger.warning(f"Forebet router not available: {e}")
+    
+    # Register Extended Markets router if available
+    try:
+        from api.extended_markets_router import router as extended_router
+        app.include_router(extended_router)
+        logger.info("Registered Extended Markets router")
+    except ImportError as e:
+        logger.warning(f"Extended Markets router not available: {e}")
+    
+    logger.info("Registered API routers: ml, ensemble, monitoring, admin, forebet, extended-markets")

@@ -1,8 +1,10 @@
 // lib/api.ts
 /**
  * NEXUS AI API Client
- * Connects React frontend to FastAPI backend
+ * Connects React frontend to FastAPI backend with Clerk authentication
  */
+
+import { useAuth } from '@clerk/clerk-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -128,6 +130,48 @@ export interface HandicapMarketsResponse {
   markets: HandicapMarket[];
 }
 
+// Get auth token from Clerk
+async function getAuthToken(): Promise<string | null> {
+  try {
+    // Check if we're in development mode without Clerk
+    const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+    if (!publishableKey || publishableKey.includes('your_publishable_key_here')) {
+      return null; // No auth in development mode
+    }
+    
+    // Try to get token from Clerk
+    const { getToken } = window.Clerk?.session || {};
+    if (getToken) {
+      return await getToken();
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Helper to make authenticated requests
+async function fetchWithAuth(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const token = await getAuthToken();
+  
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...((options.headers as Record<string, string>) || {}),
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return fetch(url, {
+    ...options,
+    headers,
+  });
+}
+
 // WebSocket connection
 let ws: WebSocket | null = null;
 type ProgressCallback = (data: {
@@ -142,20 +186,20 @@ type ProgressCallback = (data: {
 export const api = {
   // System
   async getStatus(): Promise<SystemStatus> {
-    const res = await fetch(`${API_BASE}/api/status`);
+    const res = await fetchWithAuth(`${API_BASE}/api/status`);
     if (!res.ok) throw new Error('Failed to get status');
     return res.json();
   },
 
   async getStats(): Promise<SystemStats> {
-    const res = await fetch(`${API_BASE}/api/stats`);
+    const res = await fetchWithAuth(`${API_BASE}/api/stats`);
     if (!res.ok) throw new Error('Failed to get stats');
     return res.json();
   },
 
   // Analysis
   async runAnalysis(request: AnalysisRequest): Promise<{ status: string; message: string }> {
-    const res = await fetch(`${API_BASE}/api/analysis`, {
+    const res = await fetchWithAuth(`${API_BASE}/api/analysis`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
@@ -173,14 +217,14 @@ export const api = {
     if (sport) params.append('sport', sport);
     if (date) params.append('date', date);
 
-    const res = await fetch(`${API_BASE}/api/predictions?${params}`);
+    const res = await fetchWithAuth(`${API_BASE}/api/predictions?${params}`);
     if (!res.ok) throw new Error('Failed to get predictions');
     return res.json();
   },
 
   // Value Bets
   async getValueBets(): Promise<ValueBet[]> {
-    const res = await fetch(`${API_BASE}/api/value-bets`);
+    const res = await fetchWithAuth(`${API_BASE}/api/value-bets`);
     if (!res.ok) throw new Error('Failed to get value bets');
     return res.json();
   },
@@ -190,14 +234,14 @@ export const api = {
     const params = new URLSearchParams({ sport });
     if (date) params.append('date', date);
 
-    const res = await fetch(`${API_BASE}/api/matches?${params}`);
+    const res = await fetchWithAuth(`${API_BASE}/api/matches?${params}`);
     if (!res.ok) throw new Error('Failed to get matches');
     return res.json();
   },
 
   // Available Sports
   async getAvailableSports(): Promise<AvailableSportsResponse> {
-    const res = await fetch(`${API_BASE}/api/sports/available`);
+    const res = await fetchWithAuth(`${API_BASE}/api/sports/available`);
     if (!res.ok) throw new Error('Failed to get available sports');
     return res.json();
   },
@@ -213,14 +257,14 @@ export const api = {
     date?: string;
     matches_analyzed?: number;
   }> {
-    const res = await fetch(`${API_BASE}/api/predictions/live`);
+    const res = await fetchWithAuth(`${API_BASE}/api/predictions/live`);
     if (!res.ok) throw new Error('Failed to get live predictions');
     return res.json();
   },
 
   // Handicap predictions
   async predictHandicap(request: HandicapRequest): Promise<HandicapResponse> {
-    const res = await fetch(`${API_BASE}/api/handicap`, {
+    const res = await fetchWithAuth(`${API_BASE}/api/handicap`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
@@ -233,14 +277,14 @@ export const api = {
   },
 
   async getHandicapMarkets(sport: string): Promise<HandicapMarketsResponse> {
-    const res = await fetch(`${API_BASE}/api/handicap/markets?sport=${sport}`);
+    const res = await fetchWithAuth(`${API_BASE}/api/handicap/markets?sport=${sport}`);
     if (!res.ok) throw new Error('Failed to get handicap markets');
     return res.json();
   },
 
   // Match Details
   async getMatchDetails(matchId: string): Promise<MatchDetailsResponse> {
-    const res = await fetch(`${API_BASE}/api/match/${encodeURIComponent(matchId)}`);
+    const res = await fetchWithAuth(`${API_BASE}/api/match/${encodeURIComponent(matchId)}`);
     if (!res.ok) {
       const error = await res.json().catch(() => ({ detail: 'Failed to get match details' }));
       throw new Error(error.detail || 'Failed to get match details');
@@ -374,3 +418,14 @@ export function getRankColor(rank: number): string {
 }
 
 export default api;
+
+// Extend Window interface for Clerk
+declare global {
+  interface Window {
+    Clerk?: {
+      session?: {
+        getToken: () => Promise<string>;
+      };
+    };
+  }
+}

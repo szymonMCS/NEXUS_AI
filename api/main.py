@@ -10,13 +10,16 @@ from typing import List, Dict, Optional, Any
 from pathlib import Path
 import json
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Optional
 
 from config.settings import settings
+from api.auth import require_auth, optional_auth
+from core.ml import get_model_registry
 from core.models import (
     HandicapModel,
     TennisHandicapModel,
@@ -184,8 +187,16 @@ async def get_status() -> Dict[str, Any]:
 @app.post("/api/analysis")
 async def run_analysis(
     request: AnalysisRequest,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    user: Optional[Dict[str, Any]] = Depends(optional_auth)
 ) -> Dict[str, Any]:
+    """
+    Run betting analysis for a sport and date.
+    Returns immediately, analysis runs in background.
+    Use WebSocket for real-time updates.
+    
+    Authentication: Optional - works with or without auth token
+    """
     """
     Run betting analysis for a sport and date.
     Returns immediately, analysis runs in background.
@@ -392,6 +403,108 @@ async def get_stats() -> Dict[str, Any]:
     }
 
 
+@app.get("/api/forebet/predictions")
+async def get_forebet_predictions_simple(
+    sport: str = "football",
+    days: int = 3,
+    min_confidence: float = 50.0
+):
+    """
+    Simple endpoint to get Forebet predictions.
+    Falls back to mock data if scraper unavailable.
+    """
+    try:
+        # Try to use scraper
+        from agents.sports_data_swarm.forebet_scraper import ForebetScraper
+        
+        async with ForebetScraper() as scraper:
+            matches = await scraper.get_upcoming_matches(sport=sport, days=days)
+            
+            # Filter by confidence and format
+            results = []
+            for match in matches:
+                confidence = max(match.prob_home, match.prob_draw, match.prob_away)
+                if confidence >= min_confidence:
+                    results.append({
+                        "match_id": match.match_id,
+                        "home_team": match.home_team,
+                        "away_team": match.away_team,
+                        "league": match.league,
+                        "match_date": match.match_date.isoformat(),
+                        "predictions": {
+                            "home": match.prob_home,
+                            "draw": match.prob_draw,
+                            "away": match.prob_away,
+                            "predicted": match.predicted_result
+                        },
+                        "odds": {
+                            "home": match.odds_home,
+                            "draw": match.odds_draw,
+                            "away": match.odds_away
+                        },
+                        "confidence": confidence
+                    })
+            
+            return {
+                "status": "success",
+                "source": "forebet",
+                "count": len(results),
+                "matches": results
+            }
+            
+    except Exception as e:
+        # Return mock data if scraper fails
+        logger.warning(f"Forebet scraper failed: {e}, returning mock data")
+        return {
+            "status": "mock",
+            "source": "mock",
+            "message": "Scraper unavailable, using demo data",
+            "count": 4,
+            "matches": [
+                {
+                    "match_id": "man-city-vs-arsenal-2026",
+                    "home_team": "Man City",
+                    "away_team": "Arsenal",
+                    "league": "Premier League",
+                    "match_date": "2026-01-28T20:45:00",
+                    "predictions": {"home": 58, "draw": 24, "away": 18, "predicted": "1"},
+                    "odds": {"home": 1.65, "draw": 3.80, "away": 5.20},
+                    "confidence": 58
+                },
+                {
+                    "match_id": "real-madrid-vs-barcelona-2026",
+                    "home_team": "Real Madrid",
+                    "away_team": "Barcelona",
+                    "league": "La Liga",
+                    "match_date": "2026-01-28T21:00:00",
+                    "predictions": {"home": 42, "draw": 28, "away": 30, "predicted": "1"},
+                    "odds": {"home": 2.10, "draw": 3.40, "away": 3.30},
+                    "confidence": 42
+                },
+                {
+                    "match_id": "lakers-vs-warriors-2026",
+                    "home_team": "Lakers",
+                    "away_team": "Warriors",
+                    "league": "NBA",
+                    "match_date": "2026-01-28T23:00:00",
+                    "predictions": {"home": 55, "away": 45, "predicted": "1"},
+                    "odds": {"home": 1.85, "away": 1.95},
+                    "confidence": 55
+                },
+                {
+                    "match_id": "alcaraz-vs-djokovic-2026",
+                    "home_team": "Alcaraz",
+                    "away_team": "Djokovic",
+                    "league": "Australian Open",
+                    "match_date": "2026-01-29T09:00:00",
+                    "predictions": {"home": 48, "away": 52, "predicted": "2"},
+                    "odds": {"home": 1.85, "away": 1.95},
+                    "confidence": 52
+                }
+            ]
+        }
+
+
 @app.get("/api/sports/available")
 async def get_available_sports() -> Dict[str, Any]:
     """Get list of available sports with their configuration."""
@@ -571,13 +684,16 @@ async def get_live_predictions() -> Dict[str, Any]:
 @app.post("/api/predictions/analyze")
 async def analyze_predictions(
     request: AnalysisRequest,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    user: Optional[Dict[str, Any]] = Depends(optional_auth)
 ) -> Dict[str, Any]:
     """
     Trigger new prediction analysis.
     Alternative endpoint to /api/analysis for consistency.
+    
+    Authentication: Optional - works with or without auth token
     """
-    return await run_analysis(request, background_tasks)
+    return await run_analysis(request, background_tasks, user)
 
 
 @app.post("/api/handicap")
@@ -741,6 +857,608 @@ async def websocket_endpoint(websocket: WebSocket):
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+
+# === ML PREDICTION ENDPOINTS ===
+
+@app.get("/api/ml/status")
+async def get_ml_status():
+    """Get status of ML models for all sports."""
+    from core.ml import get_prediction_service as get_ml_service
+    
+    registry = get_model_registry()
+    status = {}
+    
+    for sport in ["tennis", "basketball", "football"]:
+        models = registry.get_active_models(sport)
+        status[sport] = {
+            "models_available": len(models),
+            "models": [
+                {
+                    "name": m.name,
+                    "version": m.version,
+                    "type": m.model_type,
+                    "accuracy": m.accuracy,
+                    "created": m.created_at.isoformat() if m.created_at else None
+                }
+                for m in models
+            ]
+        }
+    
+    return {"status": "success", "ml_status": status}
+
+
+@app.post("/api/ml/predict")
+async def ml_predict(request: Dict[str, Any]):
+    """
+    Get ML prediction for a match.
+    
+    Request body:
+    {
+        "sport": "tennis",
+        "home_player": "Player A",
+        "away_player": "Player B",
+        "features": {...}  # optional
+    }
+    """
+    from core.ml import get_prediction_service
+    
+    sport = request.get("sport")
+    home_player = request.get("home_player")
+    away_player = request.get("away_player")
+    features = request.get("features", {})
+    
+    if not all([sport, home_player, away_player]):
+        raise HTTPException(status_code=400, detail="Missing required fields")
+    
+    service = get_prediction_service()
+    result = service.predict(sport, home_player, away_player, features)
+    
+    return {
+        "status": "success",
+        "prediction": {
+            "home_win_probability": result.home_win_prob,
+            "away_win_probability": result.away_win_prob,
+            "draw_probability": result.draw_prob,
+            "confidence": result.confidence,
+            "model_used": result.model_name,
+            "version": result.version
+        }
+    }
+
+
+@app.post("/api/ml/predict-value")
+async def ml_predict_value(request: Dict[str, Any]):
+    """
+    Get prediction with value analysis.
+    
+    Request body:
+    {
+        "sport": "tennis",
+        "home_player": "Player A",
+        "away_player": "Player B",
+        "home_odds": 1.85,
+        "away_odds": 2.00,
+        "features": {...}  # optional
+    }
+    """
+    from core.ml import get_prediction_service
+    
+    sport = request.get("sport")
+    home_player = request.get("home_player")
+    away_player = request.get("away_player")
+    home_odds = request.get("home_odds")
+    away_odds = request.get("away_odds")
+    features = request.get("features", {})
+    
+    if not all([sport, home_player, away_player, home_odds, away_odds]):
+        raise HTTPException(status_code=400, detail="Missing required fields")
+    
+    service = get_prediction_service()
+    explanation = service.predict_with_value(
+        sport, home_player, away_player, home_odds, away_odds, features
+    )
+    
+    return {
+        "status": "success",
+        "prediction": {
+            "home_probability": explanation.home_probability,
+            "away_probability": explanation.away_probability,
+            "confidence": explanation.confidence,
+            "selection": explanation.selected_outcome,
+            "expected_value": explanation.expected_value,
+            "reasoning": explanation.reasoning,
+            "model_used": explanation.model_used,
+            "key_factors": explanation.key_factors
+        }
+    }
+
+
+@app.post("/api/ml/train")
+async def ml_train(request: Dict[str, Any], background_tasks: BackgroundTasks):
+    """
+    Trigger model training for a sport.
+    Runs in background.
+    
+    Request body:
+    {
+        "sport": "tennis",
+        "force": false  # optional, force training even if not needed
+    }
+    """
+    sport = request.get("sport")
+    force = request.get("force", False)
+    
+    if not sport:
+        raise HTTPException(status_code=400, detail="Sport required")
+    
+    def train_task():
+        import asyncio
+        from betting_floor import BettingFloor
+        
+        async def do_train():
+            floor = BettingFloor()
+            await floor.initialize()
+            result = await floor.train_models(sport, force)
+            print(f"Training completed: {result}")
+        
+        asyncio.run(do_train())
+    
+    background_tasks.add_task(train_task)
+    
+    return {
+        "status": "training_started",
+        "sport": sport,
+        "force": force,
+        "message": "Training started in background"
+    }
+
+
+@app.post("/api/ml/update-result")
+async def ml_update_result(request: Dict[str, Any]):
+    """
+    Update match result for model training.
+    
+    Request body:
+    {
+        "match_id": "unique_id",
+        "sport": "tennis",
+        "home_score": 2,
+        "away_score": 1
+    }
+    """
+    from betting_floor import BettingFloor
+    
+    match_id = request.get("match_id")
+    sport = request.get("sport")
+    home_score = request.get("home_score")
+    away_score = request.get("away_score")
+    
+    if not all([match_id, sport, home_score is not None, away_score is not None]):
+        raise HTTPException(status_code=400, detail="Missing required fields")
+    
+    floor = BettingFloor()
+    await floor.initialize()
+    await floor.update_match_result(match_id, home_score, away_score, sport)
+    
+    return {
+        "status": "success",
+        "message": f"Match {match_id} result updated"
+    }
+
+
+# === ENSEMBLE MODEL ENDPOINTS ===
+
+@app.get("/api/ml/ensemble/status")
+async def get_ensemble_status():
+    """
+    Get ensemble system status.
+    Returns model rankings and performance metrics.
+    """
+    from core.ml import get_prediction_service
+    
+    service = get_prediction_service()
+    
+    # Get info for all sports
+    sports = ["tennis", "basketball", "football"]
+    ensemble_status = {}
+    
+    for sport in sports:
+        info = service.get_model_info(sport)
+        ensemble_status[sport] = {
+            "available_models": info["available_models"],
+            "ensemble_enabled": info["ensemble"]["enabled"],
+            "primary_model": info["ensemble"]["primary_model"],
+            "model_rankings": info["ensemble"]["model_rankings"]
+        }
+    
+    return {
+        "status": "success",
+        "ensemble_status": ensemble_status
+    }
+
+
+@app.post("/api/ml/ensemble/predict")
+async def ensemble_predict(request: Dict[str, Any]):
+    """
+    Get ensemble prediction from multiple models.
+    
+    Request body:
+    {
+        "sport": "tennis",
+        "home_player": "Player A",
+        "away_player": "Player B",
+        "features": {...},  # optional
+        "return_details": true  # optional, return per-model predictions
+    }
+    
+    Returns:
+    {
+        "ensemble": {
+            "home_probability": 0.58,
+            "away_probability": 0.42,
+            "confidence": 0.72,
+            "agreement_score": 0.85,
+            "primary_model": "xgboost_tennis",
+            "recommended_action": "bet"
+        },
+        "model_contributions": {...},  # if return_details=true
+        "individual_predictions": [...]  # if return_details=true
+    }
+    """
+    from core.ml import get_prediction_service, get_model_registry
+    
+    sport = request.get("sport")
+    home_player = request.get("home_player")
+    away_player = request.get("away_player")
+    features = request.get("features", {})
+    return_details = request.get("return_details", False)
+    
+    if not all([sport, home_player, away_player]):
+        raise HTTPException(status_code=400, detail="Missing required fields")
+    
+    service = get_prediction_service()
+    registry = get_model_registry()
+    
+    # Get ensemble prediction
+    result = service.predict(sport, home_player, away_player, features, use_ensemble=True)
+    
+    response = {
+        "status": "success",
+        "ensemble": {
+            "home_probability": result.home_win_prob,
+            "away_probability": result.away_win_prob,
+            "draw_probability": result.draw_prob,
+            "confidence": result.confidence,
+            "model_used": result.model_name
+        }
+    }
+    
+    # Add ensemble metadata
+    if hasattr(result, '_ensemble_meta'):
+        meta = result._ensemble_meta
+        response["ensemble"].update({
+            "agreement_score": meta.get("agreement_score"),
+            "recommended_action": meta.get("recommended_action"),
+            "uncertainty": meta.get("uncertainty")
+        })
+        
+        if return_details:
+            response["model_contributions"] = meta.get("model_contributions", {})
+    
+    # Add individual predictions if requested
+    if return_details:
+        models = registry.get_active_models(sport)
+        individual = []
+        
+        for model in models:
+            try:
+                f = features.copy()
+                f['home_player'] = home_player
+                f['away_player'] = away_player
+                pred = model.predict(f)
+                individual.append({
+                    "model_name": model.name,
+                    "model_type": model.model_type,
+                    "home_probability": pred.home_win_prob,
+                    "away_probability": pred.away_win_prob,
+                    "confidence": pred.confidence
+                })
+            except Exception as e:
+                individual.append({
+                    "model_name": model.name,
+                    "error": str(e)
+                })
+        
+        response["individual_predictions"] = individual
+        response["models_used"] = len(individual)
+    
+    return response
+
+
+@app.post("/api/ml/ensemble/predict-value")
+async def ensemble_predict_value(request: Dict[str, Any]):
+    """
+    Get ensemble prediction with value betting analysis.
+    
+    Request body:
+    {
+        "sport": "tennis",
+        "home_player": "Player A",
+        "away_player": "Player B",
+        "home_odds": 1.85,
+        "away_odds": 2.00,
+        "features": {...}  # optional
+    }
+    """
+    from core.ml import get_prediction_service
+    
+    sport = request.get("sport")
+    home_player = request.get("home_player")
+    away_player = request.get("away_player")
+    home_odds = request.get("home_odds")
+    away_odds = request.get("away_odds")
+    features = request.get("features", {})
+    
+    if not all([sport, home_player, away_player, home_odds, away_odds]):
+        raise HTTPException(status_code=400, detail="Missing required fields")
+    
+    service = get_prediction_service()
+    explanation = service.predict_with_value(
+        sport, home_player, away_player, home_odds, away_odds, features, use_ensemble=True
+    )
+    
+    return {
+        "status": "success",
+        "prediction": {
+            "home_probability": explanation.home_probability,
+            "away_probability": explanation.away_probability,
+            "confidence": explanation.confidence,
+            "agreement_score": explanation.agreement_score,
+            "selection": explanation.selected_outcome,
+            "expected_value": explanation.expected_value,
+            "recommended_action": explanation.recommended_action,
+            "reasoning": explanation.reasoning,
+            "model_used": explanation.model_used,
+            "key_factors": explanation.key_factors,
+            "model_contributions": explanation.model_contributions
+        }
+    }
+
+
+@app.get("/api/ml/ensemble/rankings/{sport}")
+async def get_model_rankings(sport: str):
+    """
+    Get model rankings for a sport.
+    Shows which models contribute most to ensemble.
+    """
+    from core.ml import get_prediction_service
+    
+    service = get_prediction_service()
+    info = service.get_model_info(sport)
+    
+    return {
+        "sport": sport,
+        "rankings": info["ensemble"]["model_rankings"],
+        "primary_model": info["ensemble"]["primary_model"],
+        "total_models": info["available_models"]
+    }
+
+
+# === SCHEDULER ENDPOINTS ===
+
+@app.get("/api/scheduler/status")
+async def get_scheduler_status():
+    """Get scheduler status and upcoming analyses."""
+    from core.scheduler import get_scheduler
+    
+    scheduler = get_scheduler()
+    
+    return {
+        "status": "running" if scheduler._running else "stopped",
+        "schedules_count": len(scheduler.schedules),
+        "upcoming_analyses": scheduler.get_upcoming_analyses(),
+        "recent_logs": scheduler.get_analysis_log(limit=5)
+    }
+
+
+@app.get("/api/scheduler/schedules")
+async def get_schedules():
+    """Get all analysis schedules."""
+    from core.scheduler import get_scheduler
+    
+    scheduler = get_scheduler()
+    schedules = scheduler.get_schedules()
+    
+    return {
+        "schedules": [
+            {
+                "id": s.id,
+                "sport": s.sport,
+                "league": s.league,
+                "frequency": s.frequency.value,
+                "custom_hours": s.custom_hours,
+                "enabled": s.enabled,
+                "last_run": s.last_run.isoformat() if s.last_run else None,
+                "next_run": s.next_run.isoformat() if s.next_run else None
+            }
+            for s in schedules
+        ]
+    }
+
+
+@app.post("/api/scheduler/schedules")
+async def create_schedule(request: Dict[str, Any]):
+    """
+    Create a new analysis schedule.
+    
+    Request body:
+    {
+        "sport": "tennis",
+        "league": "ATP",  # optional
+        "frequency": "every_6_hours",  # hourly, every_3_hours, every_6_hours, every_12_hours, daily, custom
+        "custom_hours": 8  # only for custom frequency
+    }
+    """
+    from core.scheduler import get_scheduler, AnalysisFrequency
+    
+    sport = request.get("sport")
+    league = request.get("league")
+    frequency_str = request.get("frequency", "every_6_hours")
+    custom_hours = request.get("custom_hours")
+    
+    if not sport:
+        raise HTTPException(status_code=400, detail="Sport required")
+    
+    try:
+        frequency = AnalysisFrequency(frequency_str)
+    except ValueError:
+        valid = [f.value for f in AnalysisFrequency]
+        raise HTTPException(status_code=400, detail=f"Invalid frequency. Valid: {valid}")
+    
+    scheduler = get_scheduler()
+    schedule = scheduler.create_schedule(
+        sport=sport,
+        frequency=frequency,
+        league=league,
+        custom_hours=custom_hours
+    )
+    
+    return {
+        "status": "success",
+        "schedule": {
+            "id": schedule.id,
+            "sport": schedule.sport,
+            "league": schedule.league,
+            "frequency": schedule.frequency.value,
+            "next_run": schedule.next_run.isoformat() if schedule.next_run else None
+        }
+    }
+
+
+@app.delete("/api/scheduler/schedules/{schedule_id}")
+async def delete_schedule(schedule_id: str):
+    """Delete a schedule."""
+    from core.scheduler import get_scheduler
+    
+    scheduler = get_scheduler()
+    scheduler.delete_schedule(schedule_id)
+    
+    return {"status": "success", "message": f"Schedule {schedule_id} deleted"}
+
+
+@app.post("/api/scheduler/schedules/{schedule_id}/toggle")
+async def toggle_schedule(schedule_id: str, enabled: bool = True):
+    """Enable/disable a schedule."""
+    from core.scheduler import get_scheduler
+    
+    scheduler = get_scheduler()
+    scheduler.enable_schedule(schedule_id, enabled)
+    
+    return {
+        "status": "success",
+        "schedule_id": schedule_id,
+        "enabled": enabled
+    }
+
+
+@app.post("/api/scheduler/start")
+async def start_scheduler():
+    """Start the scheduler."""
+    from core.scheduler import get_scheduler, default_analysis_function
+    
+    scheduler = get_scheduler()
+    scheduler.set_analysis_callback(default_analysis_function)
+    
+    import asyncio
+    asyncio.create_task(scheduler.start())
+    
+    return {"status": "success", "message": "Scheduler started"}
+
+
+@app.post("/api/scheduler/stop")
+async def stop_scheduler():
+    """Stop the scheduler."""
+    from core.scheduler import get_scheduler
+    
+    scheduler = get_scheduler()
+    await scheduler.stop()
+    
+    return {"status": "success", "message": "Scheduler stopped"}
+
+
+# === FEEDBACK LOOP ENDPOINTS ===
+
+@app.post("/api/feedback/results")
+async def record_match_result(request: Dict[str, Any]):
+    """
+    Record a match result for feedback loop.
+    
+    Request body:
+    {
+        "match_id": "unique_id",
+        "sport": "tennis",
+        "home_player": "Player A",
+        "away_player": "Player B",
+        "home_score": 2,
+        "away_score": 1,
+        "match_date": "2026-02-01T15:00:00"
+    }
+    """
+    from core.ml.feedback_loop import get_feedback_loop, MatchResult
+    from datetime import datetime
+    
+    try:
+        match_date = request.get("match_date")
+        if match_date:
+            match_date = datetime.fromisoformat(match_date)
+        else:
+            match_date = datetime.now()
+        
+        result = MatchResult(
+            match_id=request["match_id"],
+            sport=request["sport"],
+            home_player=request["home_player"],
+            away_player=request["away_player"],
+            home_score=request["home_score"],
+            away_score=request["away_score"],
+            match_date=match_date
+        )
+        
+        feedback = get_feedback_loop()
+        feedback.record_result(result)
+        
+        return {
+            "status": "success",
+            "message": f"Result recorded for match {result.match_id}"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/feedback/performance/{sport}")
+async def get_performance(sport: str):
+    """Get performance metrics for a sport."""
+    from core.ml.feedback_loop import get_feedback_loop
+    
+    feedback = get_feedback_loop()
+    metrics = feedback.get_performance_report(sport)
+    
+    return {
+        "sport": sport,
+        "metrics": metrics
+    }
+
+
+@app.get("/api/feedback/performance")
+async def get_all_performance():
+    """Get all performance metrics."""
+    from core.ml.feedback_loop import get_feedback_loop
+    
+    feedback = get_feedback_loop()
+    metrics = feedback.get_performance_report()
+    
+    return {"metrics": metrics}
 
 
 # === STATIC FILES (React Frontend) ===
