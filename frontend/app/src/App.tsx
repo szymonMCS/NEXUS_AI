@@ -12,6 +12,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AppShell } from '@/components/layout';
 import { AtmosphericBackground } from '@/components/AtmosphericBackground';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // App Pages
 import {
@@ -60,11 +61,13 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen relative">
       <AtmosphericBackground />
       <div className="relative z-10">
-        <AppShell 
+        <AppShell
           currentPage={currentPage}
           onNavigate={(href) => navigate(href)}
         >
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </AppShell>
       </div>
     </div>

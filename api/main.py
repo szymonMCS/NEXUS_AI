@@ -10,7 +10,7 @@ import signal
 import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import List, Dict, Optional, Any
 from pathlib import Path
 import json
@@ -212,6 +212,19 @@ async def rate_limit_middleware(request: Request, call_next):
 
     _rate_limit_store[client_ip].append(now)
     return await call_next(request)
+
+
+# === GLOBAL EXCEPTION HANDLER ===
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch unhandled exceptions and return structured JSON error."""
+    logger.error("Unhandled exception on %s %s: %s", request.method, request.url.path, exc, exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "path": request.url.path},
+    )
+
 
 # Register additional routers (ensemble, monitoring, admin)
 from api.routers import register_routers
@@ -609,6 +622,78 @@ async def get_stats() -> Dict[str, Any]:
         }
 
 
+@app.get("/api/bets/history")
+async def get_bet_history(
+    sport: Optional[str] = None,
+    status: Optional[str] = None,
+    days: int = 90,
+    limit: int = 100,
+    offset: int = 0,
+) -> Dict[str, Any]:
+    """Get bet history from database with optional filters."""
+    try:
+        from database.db import get_db_session
+        from database.models import Bet, Match as DBMatch, BetStatus
+        from sqlalchemy import and_, desc
+
+        with get_db_session() as db:
+            query = db.query(Bet).join(DBMatch, Bet.match_id == DBMatch.id)
+
+            # Filters
+            since = datetime.now() - timedelta(days=days)
+            query = query.filter(Bet.created_at >= since)
+
+            if sport:
+                query = query.filter(DBMatch.sport == sport)
+
+            if status:
+                try:
+                    bet_status = BetStatus(status)
+                    query = query.filter(Bet.status == bet_status)
+                except ValueError:
+                    pass
+
+            total = query.count()
+            bets = query.order_by(desc(Bet.created_at)).offset(offset).limit(limit).all()
+
+            bets_list = []
+            for b in bets:
+                match = b.match
+                bets_list.append({
+                    "id": b.id,
+                    "match": f"{match.home_team} vs {match.away_team}" if match else "",
+                    "league": match.league if match else "",
+                    "sport": match.sport.value if match and match.sport else "",
+                    "selection": b.selection,
+                    "odds": float(b.odds) if b.odds else 0,
+                    "stake": float(b.stake) if b.stake else 0,
+                    "status": b.status.value if b.status else "pending",
+                    "profit_loss": float(b.profit_loss) if b.profit_loss else 0,
+                    "edge": float(b.edge) if hasattr(b, 'edge') and b.edge else 0,
+                    "confidence": float(b.confidence) if hasattr(b, 'confidence') and b.confidence else 0,
+                    "created_at": b.created_at.isoformat() if b.created_at else "",
+                    "settled_at": b.settled_at.isoformat() if hasattr(b, 'settled_at') and b.settled_at else None,
+                })
+
+            return {
+                "status": "success",
+                "bets": bets_list,
+                "total": total,
+                "offset": offset,
+                "limit": limit,
+            }
+    except Exception as e:
+        logger.warning("Could not fetch bet history: %s", e)
+        return {
+            "status": "success",
+            "bets": [],
+            "total": 0,
+            "offset": offset,
+            "limit": limit,
+            "message": "No bet history available yet.",
+        }
+
+
 @app.post("/api/collect")
 async def collect_fixtures(
     request: AnalysisRequest,
@@ -658,7 +743,7 @@ async def check_results(background_tasks: BackgroundTasks) -> Dict[str, Any]:
 
             for ext_id in unfinished_ids[:20]:  # Limit to avoid rate limiting
                 try:
-                    event = await client.get_event_by_id(ext_id)
+                    event = await client.get_event_results(ext_id)
                     if event and event.get("intHomeScore") is not None:
                         results.append({
                             "external_id": ext_id,
