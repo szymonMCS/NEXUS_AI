@@ -12,7 +12,7 @@
  * - Quick navigation links
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageLayout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,6 +48,7 @@ import {
   Clock,
   Cpu,
   Flame,
+  Loader2,
   Server,
   Target,
   TrendingUp,
@@ -55,71 +56,36 @@ import {
   Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import api from '@/lib/api';
 
-// Mock data
-const kpiData = [
-  { label: "Today's Predictions", value: '47', change: '+12%', positive: true, icon: Target, sparkline: [32, 35, 38, 42, 40, 44, 47] },
-  { label: 'Active Live Matches', value: '12', change: '+3', positive: true, icon: Activity, sparkline: [8, 10, 7, 9, 11, 10, 12] },
-  { label: 'Win Rate (30d)', value: '66.2%', change: '+5.2%', positive: true, icon: TrendingUp, sparkline: [58, 60, 61, 63, 64, 65, 66.2] },
-  { label: 'Total ROI', value: '+14.8%', change: '+2.1%', positive: true, icon: Zap, sparkline: [8, 9.5, 10, 11.2, 12.5, 13.8, 14.8] },
-];
+// Types for dashboard data
+interface KPIItem {
+  label: string;
+  value: string;
+  change: string;
+  positive: boolean;
+  icon: typeof Target;
+  sparkline: number[];
+}
 
-const liveMatches = [
-  { id: 1, league: 'Champions League', home: 'Ajax', away: 'Olympiacos', homeScore: 1, awayScore: 2, time: "84'", prediction: { result: '2', prob: 98 } },
-  { id: 2, league: 'NBA', home: 'Lakers', away: 'Warriors', homeScore: 98, awayScore: 102, time: 'Q4 2:45', prediction: { result: '2', prob: 65 } },
-];
+interface SystemStatusItem {
+  name: string;
+  status: string;
+  accuracy: string | null;
+  lastUpdate: string;
+}
 
-const upcomingPredictions = [
-  { id: 1, league: 'Premier League', match: 'Man City vs Arsenal', time: '18:30', prediction: 'Home Win', confidence: 82, odds: 1.65, value: true, edge: 4.2 },
-  { id: 2, league: 'La Liga', match: 'Real Madrid vs Barcelona', time: '21:00', prediction: 'Draw', confidence: 76, odds: 3.40, value: false, edge: 1.5 },
-  { id: 3, league: 'NBA', match: 'Celtics vs Heat', time: '01:30', prediction: 'Home Win', confidence: 78, odds: 1.45, value: true, edge: 3.0 },
-  { id: 4, league: 'ATP', match: 'Alcaraz vs Djokovic', time: '09:00', prediction: 'Away Win', confidence: 71, odds: 1.95, value: true, edge: 3.9 },
-];
-
-const recentResults = [
-  { match: 'Man City vs Arsenal', result: 'WIN', odds: 1.65, profit: '+6.5%', time: '2h ago' },
-  { match: 'Real Madrid vs Barcelona', result: 'LOSS', odds: 2.10, profit: '-10.0%', time: '4h ago' },
-  { match: 'Celtics vs Heat', result: 'WIN', odds: 1.45, profit: '+4.5%', time: '6h ago' },
-  { match: 'Djokovic vs Sinner', result: 'WIN', odds: 1.75, profit: '+7.5%', time: '8h ago' },
-  { match: 'Bayern vs Dortmund', result: 'WIN', odds: 1.50, profit: '+5.0%', time: '10h ago' },
-];
-
-const topLeagues = [
-  { name: 'Premier League', matches: 12, accuracy: 68.5, roi: 15.2 },
-  { name: 'La Liga', matches: 8, accuracy: 62.1, roi: 8.7 },
-  { name: 'NBA', matches: 6, accuracy: 71.2, roi: 18.5 },
-  { name: 'Champions League', matches: 4, accuracy: 75.0, roi: 22.1 },
-  { name: 'ATP', matches: 5, accuracy: 70.0, roi: 14.3 },
-];
-
-// ROI performance data (7 days)
-const roiChartData = [
-  { day: 'Mon', roi: 3.2, predictions: 12, wins: 8 },
-  { day: 'Tue', roi: -1.5, predictions: 15, wins: 7 },
-  { day: 'Wed', roi: 5.8, predictions: 10, wins: 7 },
-  { day: 'Thu', roi: 2.1, predictions: 18, wins: 11 },
-  { day: 'Fri', roi: 8.4, predictions: 14, wins: 10 },
-  { day: 'Sat', roi: 12.2, predictions: 22, wins: 16 },
-  { day: 'Sun', roi: 14.8, predictions: 20, wins: 14 },
-];
-
-// System health
-const systemStatus = [
-  { name: 'Ensemble Model', status: 'active', accuracy: '88.2%', lastUpdate: '2m ago' },
-  { name: 'MLP + PCA', status: 'active', accuracy: '86.7%', lastUpdate: '2m ago' },
-  { name: 'Data Pipeline', status: 'active', accuracy: null, lastUpdate: '30s ago' },
-  { name: 'Odds Feed', status: 'active', accuracy: null, lastUpdate: '15s ago' },
-];
-
-// Activity timeline
-const activityTimeline = [
-  { time: '16:42', event: 'Value bet identified', detail: 'Man City vs Arsenal - Home Win @ 1.65', type: 'value' as const },
-  { time: '16:30', event: 'Match started', detail: 'Liverpool vs Chelsea - Premier League', type: 'match' as const },
-  { time: '16:15', event: 'Model prediction', detail: 'Atletico vs Sevilla - Home Win (73%)', type: 'prediction' as const },
-  { time: '15:55', event: 'Prediction settled', detail: 'Tottenham vs Aston Villa - LOSS', type: 'loss' as const },
-  { time: '15:30', event: 'Prediction settled', detail: 'Bayern vs Dortmund - WIN (+5.0%)', type: 'win' as const },
-  { time: '14:50', event: 'Line movement', detail: 'Man City AH -0.75 to -0.50', type: 'line' as const },
-];
+interface UpcomingPrediction {
+  id: number;
+  league: string;
+  match: string;
+  time: string;
+  prediction: string;
+  confidence: number;
+  odds: number;
+  value: boolean;
+  edge: number;
+}
 
 // Helper components
 const MiniSparkline = ({ data, positive }: { data: number[]; positive: boolean }) => {
@@ -197,8 +163,82 @@ const ConfidenceBar = ({ value }: { value: number }) => (
 );
 
 export function DashboardPage() {
-  const [activeTab, setActiveTab] = useState('live');
+  const [activeTab, setActiveTab] = useState('upcoming');
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+
+  // Real data state
+  const [kpiData, setKpiData] = useState<KPIItem[]>([
+    { label: "Today's Predictions", value: '-', change: '', positive: true, icon: Target, sparkline: [] },
+    { label: 'Total Bets', value: '-', change: '', positive: true, icon: Activity, sparkline: [] },
+    { label: 'Win Rate (30d)', value: '-', change: '', positive: true, icon: TrendingUp, sparkline: [] },
+    { label: 'Total ROI', value: '-', change: '', positive: true, icon: Zap, sparkline: [] },
+  ]);
+  const [upcomingPredictions, setUpcomingPredictions] = useState<UpcomingPrediction[]>([]);
+  const [systemStatus, setSystemStatus] = useState<SystemStatusItem[]>([]);
+  const [roiChartData, setRoiChartData] = useState<Array<{ day: string; roi: number; predictions: number }>>([]);
+
+  // Fetch real data from API
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [statsRes, statusRes, predictionsRes] = await Promise.allSettled([
+        api.getStats(),
+        api.getStatus(),
+        api.getPredictions(),
+      ]);
+
+      // Process stats
+      if (statsRes.status === 'fulfilled') {
+        const stats = statsRes.value;
+        setKpiData([
+          { label: "Total Analyses", value: String(stats.total_analyses || 0), change: '', positive: true, icon: Target, sparkline: [] },
+          { label: 'Winning Bets', value: String(stats.successful_bets || 0), change: '', positive: true, icon: Activity, sparkline: [] },
+          { label: 'Win Rate (30d)', value: `${stats.win_rate || 0}%`, change: '', positive: (stats.win_rate || 0) > 50, icon: TrendingUp, sparkline: [] },
+          { label: 'Total ROI', value: `${(stats.roi ?? stats.total_profit ?? 0) > 0 ? '+' : ''}${stats.roi ?? stats.total_profit ?? 0}%`, change: '', positive: (stats.roi ?? stats.total_profit ?? 0) > 0, icon: Zap, sparkline: [] },
+        ]);
+      }
+
+      // Process system status
+      if (statusRes.status === 'fulfilled') {
+        const status = statusRes.value;
+        const items: SystemStatusItem[] = [
+          { name: 'API Server', status: status.status === 'running' ? 'active' : 'warning', accuracy: null, lastUpdate: 'now' },
+          { name: `Mode: ${status.mode}`, status: 'active', accuracy: null, lastUpdate: `v${(status as any).version || '?'}` },
+        ];
+        setSystemStatus(items);
+      }
+
+      // Process predictions
+      if (predictionsRes.status === 'fulfilled') {
+        const preds = predictionsRes.value;
+        if (preds.value_bets && preds.value_bets.length > 0) {
+          setUpcomingPredictions(preds.value_bets.map((vb, i) => ({
+            id: i + 1,
+            league: vb.league || '',
+            match: vb.match || '',
+            time: preds.date || '',
+            prediction: vb.selection || '',
+            confidence: Math.round((vb.confidence || 0) * 100),
+            odds: vb.odds || 0,
+            value: (vb.edge || 0) > 0.02,
+            edge: Math.round((vb.edge || 0) * 1000) / 10,
+          })));
+        }
+      }
+    } catch (e) {
+      console.error('Dashboard data fetch error:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+    // Refresh every 60 seconds
+    const interval = setInterval(fetchDashboardData, 60_000);
+    return () => clearInterval(interval);
+  }, [fetchDashboardData]);
 
   return (
     <PageLayout
@@ -206,6 +246,14 @@ export function DashboardPage() {
       description="Overview of matches, predictions, and performance"
     >
       <div className="space-y-6">
+        {/* Loading indicator */}
+        {loading && (
+          <div className="flex items-center gap-2 text-gray-500 text-sm">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Loading dashboard data...
+          </div>
+        )}
+
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {kpiData.map((item, idx) => (
@@ -237,61 +285,56 @@ export function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={roiChartData}>
-                    <defs>
-                      <linearGradient id="roiGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#00ff88" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#00ff88" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="rgba(255,255,255,0.06)"
-                    />
-                    <XAxis dataKey="day" stroke="#64748b" fontSize={12} />
-                    <YAxis
-                      yAxisId="left"
-                      stroke="#64748b"
-                      fontSize={12}
-                      tickFormatter={(v) => `${v}%`}
-                    />
-                    <YAxis
-                      yAxisId="right"
-                      orientation="right"
-                      stroke="#64748b"
-                      fontSize={12}
-                    />
-                    <RechartsTooltip
-                      contentStyle={{
-                        backgroundColor: '#0f1623',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '8px',
-                        fontSize: 12,
-                      }}
-                      labelStyle={{ color: '#fff' }}
-                    />
-                    <Area
-                      yAxisId="left"
-                      type="monotone"
-                      dataKey="roi"
-                      stroke="#00ff88"
-                      strokeWidth={2}
-                      fillOpacity={1}
-                      fill="url(#roiGrad)"
-                      name="ROI %"
-                    />
-                    <Line
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="predictions"
-                      stroke="rgba(0, 212, 255, 0.4)"
-                      strokeWidth={1}
-                      dot={false}
-                      name="Predictions"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {roiChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={roiChartData}>
+                      <defs>
+                        <linearGradient id="roiGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#00ff88" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="#00ff88" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="rgba(255,255,255,0.06)"
+                      />
+                      <XAxis dataKey="day" stroke="#64748b" fontSize={12} />
+                      <YAxis
+                        yAxisId="left"
+                        stroke="#64748b"
+                        fontSize={12}
+                        tickFormatter={(v) => `${v}%`}
+                      />
+                      <RechartsTooltip
+                        contentStyle={{
+                          backgroundColor: '#0f1623',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '8px',
+                          fontSize: 12,
+                        }}
+                        labelStyle={{ color: '#fff' }}
+                      />
+                      <Area
+                        yAxisId="left"
+                        type="monotone"
+                        dataKey="roi"
+                        stroke="#00ff88"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#roiGrad)"
+                        name="ROI %"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="text-center">
+                      <BarChart3 className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">No ROI data yet</p>
+                      <p className="text-xs mt-1">Chart will populate after bets are settled</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -392,157 +435,89 @@ export function DashboardPage() {
                   </TabsList>
 
                   <TabsContent value="live" className="mt-0">
-                    <div className="space-y-3">
-                      {liveMatches.map((match) => (
-                        <div
-                          key={match.id}
-                          className="p-4 bg-white/5 rounded-lg border border-white/10"
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <Badge
-                              variant="outline"
-                              className="text-xs border-white/20 text-gray-400"
-                            >
-                              {match.league}
-                            </Badge>
-                            <div className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-[#ff3860] animate-pulse" />
-                              <span className="text-sm text-[#ff3860]">{match.time}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-white font-medium">{match.home}</span>
-                                <span className="text-2xl font-bold text-white">
-                                  {match.homeScore}
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-white font-medium">{match.away}</span>
-                                <span className="text-2xl font-bold text-white">
-                                  {match.awayScore}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="ml-6 pl-6 border-l border-white/10">
-                              <div className="text-xs text-gray-500 mb-1">Prediction</div>
-                              <Badge className="bg-[#00d4ff]/20 text-[#00d4ff] border-0">
-                                {match.prediction.prob}%{' '}
-                                {match.prediction.result === '1'
-                                  ? 'Home'
-                                  : match.prediction.result === '2'
-                                    ? 'Away'
-                                    : 'Draw'}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="p-6 text-center text-gray-500">
+                      <Activity className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                      <p className="text-sm">No live matches tracked at the moment.</p>
+                      <p className="text-xs mt-1">Run an analysis to start tracking matches.</p>
                     </div>
                   </TabsContent>
 
                   <TabsContent value="upcoming" className="mt-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="border-white/10 hover:bg-transparent">
-                          <TableHead className="text-gray-500">Match</TableHead>
-                          <TableHead className="text-gray-500">Time</TableHead>
-                          <TableHead className="text-gray-500">Prediction</TableHead>
-                          <TableHead className="text-gray-500">Conf.</TableHead>
-                          <TableHead className="text-gray-500">Odds</TableHead>
-                          <TableHead className="text-gray-500">Edge</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {upcomingPredictions.map((pred) => (
-                          <TableRow
-                            key={pred.id}
-                            className="border-white/5 hover:bg-white/5"
-                          >
-                            <TableCell>
-                              <div className="text-white font-medium">{pred.match}</div>
-                              <div className="text-xs text-gray-500">{pred.league}</div>
-                            </TableCell>
-                            <TableCell className="text-gray-400">{pred.time}</TableCell>
-                            <TableCell>
-                              <span className="text-[#00d4ff]">{pred.prediction}</span>
-                              {pred.value && (
-                                <Badge className="ml-2 bg-[#00ff88]/20 text-[#00ff88] border-0 text-xs">
-                                  Value
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <ConfidenceBar value={pred.confidence} />
-                            </TableCell>
-                            <TableCell className="font-mono text-white">
-                              {pred.odds.toFixed(2)}
-                            </TableCell>
-                            <TableCell>
-                              <span
-                                className={cn(
-                                  'text-xs font-medium',
-                                  pred.edge >= 3
-                                    ? 'text-[#00ff88]'
-                                    : pred.edge >= 1
-                                      ? 'text-[#00d4ff]'
-                                      : 'text-gray-500'
-                                )}
-                              >
-                                +{pred.edge}%
-                              </span>
-                            </TableCell>
+                    {upcomingPredictions.length === 0 ? (
+                      <div className="p-6 text-center text-gray-500">
+                        <Target className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                        <p className="text-sm">No predictions yet.</p>
+                        <Button
+                          size="sm"
+                          className="mt-3 bg-[#00d4ff] text-black hover:bg-[#00d4ff]/90"
+                          onClick={() => navigate('/app/predictions')}
+                        >
+                          Run Analysis
+                        </Button>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-white/10 hover:bg-transparent">
+                            <TableHead className="text-gray-500">Match</TableHead>
+                            <TableHead className="text-gray-500">Date</TableHead>
+                            <TableHead className="text-gray-500">Prediction</TableHead>
+                            <TableHead className="text-gray-500">Conf.</TableHead>
+                            <TableHead className="text-gray-500">Odds</TableHead>
+                            <TableHead className="text-gray-500">Edge</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {upcomingPredictions.map((pred) => (
+                            <TableRow
+                              key={pred.id}
+                              className="border-white/5 hover:bg-white/5"
+                            >
+                              <TableCell>
+                                <div className="text-white font-medium">{pred.match}</div>
+                                <div className="text-xs text-gray-500">{pred.league}</div>
+                              </TableCell>
+                              <TableCell className="text-gray-400">{pred.time}</TableCell>
+                              <TableCell>
+                                <span className="text-[#00d4ff]">{pred.prediction}</span>
+                                {pred.value && (
+                                  <Badge className="ml-2 bg-[#00ff88]/20 text-[#00ff88] border-0 text-xs">
+                                    Value
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <ConfidenceBar value={pred.confidence} />
+                              </TableCell>
+                              <TableCell className="font-mono text-white">
+                                {pred.odds.toFixed(2)}
+                              </TableCell>
+                              <TableCell>
+                                <span
+                                  className={cn(
+                                    'text-xs font-medium',
+                                    pred.edge >= 3
+                                      ? 'text-[#00ff88]'
+                                      : pred.edge >= 1
+                                        ? 'text-[#00d4ff]'
+                                        : 'text-gray-500'
+                                  )}
+                                >
+                                  +{pred.edge}%
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
                   </TabsContent>
 
                   <TabsContent value="results" className="mt-0">
-                    <div className="space-y-2">
-                      {recentResults.map((result, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between p-3 bg-white/5 rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            {result.result === 'WIN' ? (
-                              <CheckCircle2 className="w-4 h-4 text-[#00ff88]" />
-                            ) : (
-                              <XCircle className="w-4 h-4 text-[#ff3860]" />
-                            )}
-                            <div>
-                              <div className="text-white font-medium text-sm">
-                                {result.match}
-                              </div>
-                              <div className="text-xs text-gray-500">{result.time}</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <Badge
-                              className={cn(
-                                'border-0',
-                                result.result === 'WIN'
-                                  ? 'bg-[#00ff88]/20 text-[#00ff88]'
-                                  : 'bg-[#ff3860]/20 text-[#ff3860]'
-                              )}
-                            >
-                              {result.result}
-                            </Badge>
-                            <span
-                              className={cn(
-                                'text-sm font-medium w-16 text-right font-mono',
-                                result.profit.startsWith('+')
-                                  ? 'text-[#00ff88]'
-                                  : 'text-[#ff3860]'
-                              )}
-                            >
-                              {result.profit}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="p-6 text-center text-gray-500">
+                      <Clock className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                      <p className="text-sm">No settled results yet.</p>
+                      <p className="text-xs mt-1">Results will appear after matches finish.</p>
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -552,93 +527,45 @@ export function DashboardPage() {
 
           {/* Right Column - Sidebar Content */}
           <div className="space-y-6">
-            {/* Activity Timeline */}
+            {/* System Status */}
             <Card className="bg-[#0f1623]/80 border-white/10">
               <CardHeader className="pb-3">
                 <CardTitle className="text-white flex items-center gap-2 text-base">
                   <Clock className="w-4 h-4 text-[#00d4ff]" />
-                  Activity
+                  System Info
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-0">
-                  {activityTimeline.map((item, idx) => (
-                    <div key={idx} className="flex gap-3 py-2">
-                      {/* Timeline dot and line */}
-                      <div className="flex flex-col items-center">
-                        <div
-                          className={cn(
-                            'w-2 h-2 rounded-full mt-1.5',
-                            item.type === 'value'
-                              ? 'bg-[#00ff88]'
-                              : item.type === 'win'
-                                ? 'bg-[#00ff88]'
-                                : item.type === 'loss'
-                                  ? 'bg-[#ff3860]'
-                                  : item.type === 'match'
-                                    ? 'bg-[#ff3860]'
-                                    : item.type === 'line'
-                                      ? 'bg-[#ff9500]'
-                                      : 'bg-[#00d4ff]'
-                          )}
-                        />
-                        {idx < activityTimeline.length - 1 && (
-                          <div className="w-px flex-1 bg-white/10 mt-1" />
-                        )}
-                      </div>
-                      {/* Content */}
-                      <div className="pb-3">
+                {systemStatus.length > 0 ? (
+                  <div className="space-y-2">
+                    {systemStatus.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2.5 bg-white/5 rounded-lg">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-gray-600 font-mono">
-                            {item.time}
-                          </span>
-                          <span className="text-xs text-gray-400">{item.event}</span>
+                          <div className={cn('w-2 h-2 rounded-full', item.status === 'active' ? 'bg-[#00ff88]' : 'bg-[#ff9500]')} />
+                          <span className="text-sm text-white">{item.name}</span>
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5">{item.detail}</p>
+                        <span className="text-xs text-gray-500">{item.lastUpdate}</span>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">Connecting...</p>
+                )}
               </CardContent>
             </Card>
 
-            {/* Top Leagues */}
+            {/* Info */}
             <Card className="bg-[#0f1623]/80 border-white/10">
               <CardHeader className="pb-3">
                 <CardTitle className="text-white flex items-center gap-2 text-base">
                   <TrendingUp className="w-4 h-4 text-[#00d4ff]" />
-                  Top Leagues
+                  Performance
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {topLeagues.map((league) => (
-                  <div
-                    key={league.name}
-                    className="flex items-center justify-between p-2.5 hover:bg-white/5 rounded-lg transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-white">{league.name}</div>
-                      <div className="text-xs text-gray-600">{league.matches} matches</div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="text-xs text-[#00ff88]">{league.accuracy}%</div>
-                        <div className="text-[10px] text-gray-600">accuracy</div>
-                      </div>
-                      <div className="text-right">
-                        <div
-                          className={cn(
-                            'text-xs font-mono',
-                            league.roi > 0 ? 'text-[#00ff88]' : 'text-[#ff3860]'
-                          )}
-                        >
-                          +{league.roi}%
-                        </div>
-                        <div className="text-[10px] text-gray-600">ROI</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <CardContent>
+                <p className="text-sm text-gray-500 text-center py-4">
+                  Performance stats will appear after running analyses and settling bets.
+                </p>
               </CardContent>
             </Card>
 
