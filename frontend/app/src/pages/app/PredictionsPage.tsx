@@ -11,7 +11,7 @@
  * - Risk assessment
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PageLayout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,22 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
   Activity,
-  ArrowUpRight,
   Bell,
   BookOpen,
   Calendar,
@@ -45,18 +30,18 @@ import {
   ChevronUp,
   Clock,
   Filter,
-  Flame,
   Layers,
-  LineChart,
+  Loader2,
   Percent,
+  Play,
   Search,
   Shield,
-  Star,
   Target,
   TrendingUp,
   Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import api from '@/lib/api';
 
 // Types
 type Sport = 'football' | 'basketball' | 'tennis';
@@ -89,241 +74,54 @@ const sportConfig: Record<Sport | 'all', { label: string; color: string }> = {
   tennis: { label: 'Tennis', color: '#00d4ff' },
 };
 
-// Mock data
-const predictions: Prediction[] = [
-  {
-    id: '1',
-    match: 'Man City vs Arsenal',
-    league: 'Premier League',
-    sport: 'football',
-    startTime: '2026-01-29T18:30:00',
-    prediction: 'Man City Win',
-    confidence: 82,
-    odds: 1.65,
-    modelProb: 65,
-    bookieProb: 61,
-    edge: 4.2,
-    isValue: true,
-    riskLevel: 'low',
-    factors: [
-      { name: 'Home Advantage', impact: 'positive', weight: 15 },
-      { name: 'Recent Form', impact: 'positive', weight: 18 },
-      { name: 'ELO Rating', impact: 'positive', weight: 12 },
-      { name: 'Injury Impact', impact: 'negative', weight: -8 },
-      { name: 'H2H Record', impact: 'positive', weight: 10 },
-    ],
-    bookmakers: [
-      { name: 'Pinnacle', odds: 1.68, best: true },
-      { name: 'Bet365', odds: 1.65 },
-      { name: 'Unibet', odds: 1.63 },
-      { name: 'William Hill', odds: 1.62 },
-    ],
-    similarMatches: [
-      { match: 'Man City vs Liverpool', result: '2-1', similarity: 88 },
-      { match: 'Man City vs Chelsea', result: '3-0', similarity: 82 },
-    ],
-    status: 'upcoming',
-  },
-  {
-    id: '2',
-    match: 'Real Madrid vs Barcelona',
-    league: 'La Liga',
-    sport: 'football',
-    startTime: '2026-01-29T21:00:00',
-    prediction: 'Draw',
-    confidence: 58,
-    odds: 3.40,
-    modelProb: 32,
-    bookieProb: 29,
-    edge: 3.1,
-    isValue: true,
-    riskLevel: 'high',
-    factors: [
-      { name: 'Home Advantage', impact: 'neutral', weight: 5 },
-      { name: 'Recent Form', impact: 'neutral', weight: 2 },
-      { name: 'ELO Rating', impact: 'neutral', weight: 0 },
-      { name: 'Pressure Index', impact: 'negative', weight: -5 },
-    ],
-    bookmakers: [
-      { name: 'Pinnacle', odds: 3.50, best: true },
-      { name: 'Bet365', odds: 3.40 },
-      { name: 'Unibet', odds: 3.35 },
-    ],
-    similarMatches: [
-      { match: 'Real vs Atletico', result: '1-1', similarity: 75 },
-    ],
-    status: 'upcoming',
-  },
-  {
-    id: '3',
-    match: 'Celtics vs Heat',
-    league: 'NBA',
-    sport: 'basketball',
-    startTime: '2026-01-29T01:30:00',
-    prediction: 'Celtics Win',
-    confidence: 78,
-    odds: 1.45,
-    modelProb: 72,
-    bookieProb: 69,
-    edge: 3.0,
-    isValue: true,
-    riskLevel: 'low',
-    factors: [
-      { name: 'Rest Days', impact: 'positive', weight: 12 },
-      { name: 'Home Court', impact: 'positive', weight: 15 },
-      { name: 'Player Form', impact: 'positive', weight: 18 },
-    ],
-    bookmakers: [
-      { name: 'Pinnacle', odds: 1.47, best: true },
-      { name: 'DraftKings', odds: 1.45 },
-      { name: 'FanDuel', odds: 1.43 },
-    ],
-    similarMatches: [
-      { match: 'Celtics vs Bucks', result: '112-105', similarity: 85 },
-    ],
-    status: 'upcoming',
-  },
-  {
-    id: '4',
-    match: 'Ajax vs Olympiacos',
-    league: 'Champions League',
-    sport: 'football',
-    startTime: '2026-01-28T20:45:00',
-    prediction: 'Olympiacos Win',
-    confidence: 65,
-    odds: 2.88,
-    modelProb: 42,
-    bookieProb: 35,
-    edge: 7.0,
-    isValue: true,
-    riskLevel: 'medium',
-    factors: [
-      { name: 'Away Form', impact: 'positive', weight: 15 },
-      { name: 'Counter Attack', impact: 'positive', weight: 12 },
-      { name: 'Ajax Defense', impact: 'positive', weight: 18 },
-    ],
-    bookmakers: [
-      { name: 'Pinnacle', odds: 2.95, best: true },
-      { name: 'Bet365', odds: 2.88 },
-    ],
-    similarMatches: [],
-    status: 'live',
-    liveScore: { home: 1, away: 2, minute: "84'" },
-  },
-  {
-    id: '5',
-    match: 'Alcaraz vs Djokovic',
-    league: 'ATP Finals',
-    sport: 'tennis',
-    startTime: '2026-01-30T09:00:00',
-    prediction: 'Djokovic Win',
-    confidence: 71,
-    odds: 1.95,
-    modelProb: 55,
-    bookieProb: 51,
-    edge: 3.9,
-    isValue: true,
-    riskLevel: 'medium',
-    factors: [
-      { name: 'Surface Expertise', impact: 'positive', weight: 20 },
-      { name: 'Experience', impact: 'positive', weight: 15 },
-      { name: 'Recent Fatigue', impact: 'negative', weight: -10 },
-    ],
-    bookmakers: [
-      { name: 'Pinnacle', odds: 1.98, best: true },
-      { name: 'Bet365', odds: 1.95 },
-    ],
-    similarMatches: [
-      { match: 'Djokovic vs Sinner', result: '2-1', similarity: 80 },
-    ],
-    status: 'upcoming',
-  },
-  {
-    id: '6',
-    match: 'Bayern Munich vs Dortmund',
-    league: 'Bundesliga',
-    sport: 'football',
-    startTime: '2026-01-30T15:30:00',
-    prediction: 'Over 2.5',
-    confidence: 74,
-    odds: 1.72,
-    modelProb: 62,
-    bookieProb: 58,
-    edge: 4.0,
-    isValue: true,
-    riskLevel: 'low',
-    factors: [
-      { name: 'H2H Goals Avg', impact: 'positive', weight: 20 },
-      { name: 'Both Teams Score Rate', impact: 'positive', weight: 16 },
-      { name: 'Defensive Injuries', impact: 'positive', weight: 10 },
-    ],
-    bookmakers: [
-      { name: 'Pinnacle', odds: 1.75, best: true },
-      { name: 'Bet365', odds: 1.72 },
-    ],
-    similarMatches: [
-      { match: 'Bayern vs Leipzig', result: '3-2', similarity: 78 },
-    ],
-    status: 'upcoming',
-  },
-  {
-    id: '7',
-    match: 'Lakers vs Warriors',
-    league: 'NBA',
-    sport: 'basketball',
-    startTime: '2026-01-29T03:00:00',
-    prediction: 'Warriors Win',
-    confidence: 62,
-    odds: 2.10,
-    modelProb: 52,
-    bookieProb: 48,
-    edge: 4.2,
-    isValue: true,
-    riskLevel: 'medium',
-    factors: [
-      { name: 'Home Court', impact: 'positive', weight: 14 },
-      { name: 'Back-to-Back', impact: 'negative', weight: -8 },
-      { name: '3PT Shooting', impact: 'positive', weight: 12 },
-    ],
-    bookmakers: [
-      { name: 'DraftKings', odds: 2.12, best: true },
-      { name: 'FanDuel', odds: 2.10 },
-    ],
-    similarMatches: [
-      { match: 'Warriors vs Nuggets', result: '118-112', similarity: 72 },
-    ],
-    status: 'live',
-    liveScore: { home: 88, away: 94, minute: 'Q3 4:22' },
-  },
-  {
-    id: '8',
-    match: 'Sinner vs Medvedev',
-    league: 'Australian Open',
-    sport: 'tennis',
-    startTime: '2026-01-30T04:00:00',
-    prediction: 'Sinner Win',
-    confidence: 76,
-    odds: 1.55,
-    modelProb: 68,
-    bookieProb: 65,
-    edge: 3.5,
-    isValue: false,
-    riskLevel: 'low',
-    factors: [
-      { name: 'Hard Court Record', impact: 'positive', weight: 18 },
-      { name: 'Head-to-Head', impact: 'positive', weight: 14 },
-      { name: 'Tournament Form', impact: 'positive', weight: 12 },
-    ],
-    bookmakers: [
-      { name: 'Pinnacle', odds: 1.58, best: true },
-      { name: 'Bet365', odds: 1.55 },
-    ],
-    similarMatches: [
-      { match: 'Sinner vs Rublev', result: '3-1', similarity: 82 },
-    ],
-    status: 'upcoming',
-  },
-];
+// Map API value bets to local Prediction type
+function mapValueBetsToPredictions(
+  valueBets: Array<{
+    rank: number;
+    match: string;
+    league: string;
+    selection: string;
+    odds: number;
+    bookmaker: string;
+    edge: number;
+    quality_score: number;
+    stake_recommendation: string;
+    confidence: number;
+    reasoning: string[];
+  }>,
+  analysisDate?: string,
+): Prediction[] {
+  return valueBets.map((vb, i) => {
+    const conf = Math.round((vb.confidence || 0) * 100);
+    const edgePct = Math.round((vb.edge || 0) * 1000) / 10;
+    const modelProb = Math.round((1 / (vb.odds || 2)) * 100 + edgePct);
+    const bookieProb = Math.round((1 / (vb.odds || 2)) * 100);
+
+    return {
+      id: String(vb.rank || i + 1),
+      match: vb.match,
+      league: vb.league || '',
+      sport: 'football' as Sport,
+      startTime: analysisDate || new Date().toISOString(),
+      prediction: vb.selection,
+      confidence: conf,
+      odds: vb.odds,
+      modelProb,
+      bookieProb,
+      edge: edgePct,
+      isValue: edgePct > 2,
+      riskLevel: (conf >= 70 ? 'low' : conf >= 55 ? 'medium' : 'high') as 'low' | 'medium' | 'high',
+      factors: (vb.reasoning || []).map((r) => ({
+        name: r.length > 40 ? r.slice(0, 40) + '...' : r,
+        impact: 'neutral' as const,
+        weight: 0,
+      })),
+      bookmakers: [{ name: vb.bookmaker || 'Best', odds: vb.odds, best: true }],
+      similarMatches: [],
+      status: 'upcoming' as const,
+    };
+  });
+}
 
 // Helper components
 const ConfidenceBar = ({ value }: { value: number }) => (
@@ -617,11 +415,70 @@ const PredictionCard = ({ prediction, expanded, onToggle }: {
 export function PredictionsPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [sportFilter, setSportFilter] = useState<Sport | 'all'>('all');
-  const [expandedId, setExpandedId] = useState<string | null>('1');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [confidenceFilter, setConfidenceFilter] = useState('all');
   const [riskFilter, setRiskFilter] = useState('all');
   const [valueOnly, setValueOnly] = useState(false);
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisMessage, setAnalysisMessage] = useState('');
+  const [selectedSport, setSelectedSport] = useState('tennis');
+
+  const fetchPredictions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [predsRes, liveRes] = await Promise.allSettled([
+        api.getPredictions(),
+        api.getLivePredictions(),
+      ]);
+
+      const allPredictions: Prediction[] = [];
+
+      if (predsRes.status === 'fulfilled' && predsRes.value.value_bets?.length > 0) {
+        allPredictions.push(
+          ...mapValueBetsToPredictions(predsRes.value.value_bets, predsRes.value.date)
+        );
+      }
+
+      if (liveRes.status === 'fulfilled' && liveRes.value.live_bets?.length > 0) {
+        const livePreds = mapValueBetsToPredictions(liveRes.value.live_bets);
+        livePreds.forEach(p => { p.status = 'live'; });
+        allPredictions.push(...livePreds);
+      }
+
+      setPredictions(allPredictions);
+      if (allPredictions.length > 0) {
+        setExpandedId(allPredictions[0].id);
+      }
+    } catch (e) {
+      console.error('Failed to fetch predictions:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleRunAnalysis = useCallback(async () => {
+    setAnalyzing(true);
+    setAnalysisMessage('');
+    try {
+      const res = await api.runAnalysis({ sport: selectedSport as any });
+      setAnalysisMessage(res.message || 'Analysis started');
+      // Poll for results after a delay
+      setTimeout(fetchPredictions, 5000);
+    } catch (e: any) {
+      setAnalysisMessage(e.message || 'Analysis failed');
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [selectedSport, fetchPredictions]);
+
+  useEffect(() => {
+    fetchPredictions();
+    const interval = setInterval(fetchPredictions, 60_000);
+    return () => clearInterval(interval);
+  }, [fetchPredictions]);
 
   const filteredPredictions = predictions.filter(p => {
     if (sportFilter !== 'all' && p.sport !== sportFilter) return false;
@@ -662,6 +519,55 @@ export function PredictionsPage() {
       breadcrumbs={[{ label: 'Predictions' }]}
     >
       <div className="space-y-6">
+        {/* Loading */}
+        {loading && (
+          <div className="flex items-center gap-2 text-gray-500 text-sm">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Loading predictions...
+          </div>
+        )}
+
+        {/* Run Analysis */}
+        {!loading && predictions.length === 0 && (
+          <Card className="bg-[#0f1623]/80 border-white/10">
+            <CardContent className="p-6">
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="flex-1">
+                  <h3 className="text-white font-medium mb-1">No predictions available</h3>
+                  <p className="text-sm text-gray-400">Run an analysis to generate predictions for a sport.</p>
+                  {analysisMessage && (
+                    <p className="text-sm text-[#00d4ff] mt-2">{analysisMessage}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={selectedSport} onValueChange={setSelectedSport}>
+                    <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#0f1623] border-white/10">
+                      <SelectItem value="tennis" className="text-white">Tennis</SelectItem>
+                      <SelectItem value="basketball" className="text-white">Basketball</SelectItem>
+                      <SelectItem value="football" className="text-white">Football</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={handleRunAnalysis}
+                    disabled={analyzing}
+                    className="bg-[#00d4ff] text-black hover:bg-[#00d4ff]/90"
+                  >
+                    {analyzing ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Play className="w-4 h-4 mr-2" />
+                    )}
+                    {analyzing ? 'Analyzing...' : 'Run Analysis'}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Sport Sub-tabs */}
         <div className="flex items-center gap-2">
           {(Object.entries(sportConfig) as [Sport | 'all', { label: string; color: string }][]).map(([key, cfg]) => (

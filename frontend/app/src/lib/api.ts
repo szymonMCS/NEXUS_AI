@@ -130,6 +130,31 @@ export interface HandicapMarketsResponse {
   markets: HandicapMarket[];
 }
 
+// Bet history types
+export interface BetHistoryItem {
+  id: number;
+  match: string;
+  league: string;
+  sport: string;
+  selection: string;
+  odds: number;
+  stake: number;
+  status: 'pending' | 'won' | 'lost' | 'void';
+  profit_loss: number;
+  edge: number;
+  confidence: number;
+  created_at: string;
+  settled_at: string | null;
+}
+
+export interface BetHistoryResponse {
+  status: string;
+  bets: BetHistoryItem[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
 // Get auth token from Clerk
 async function getAuthToken(): Promise<string | null> {
   try {
@@ -279,6 +304,26 @@ export const api = {
   async getHandicapMarkets(sport: string): Promise<HandicapMarketsResponse> {
     const res = await fetchWithAuth(`${API_BASE}/api/handicap/markets?sport=${sport}`);
     if (!res.ok) throw new Error('Failed to get handicap markets');
+    return res.json();
+  },
+
+  // Bet History
+  async getBetHistory(params?: {
+    sport?: string;
+    status?: string;
+    days?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<BetHistoryResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.sport) searchParams.append('sport', params.sport);
+    if (params?.status) searchParams.append('status', params.status);
+    if (params?.days) searchParams.append('days', String(params.days));
+    if (params?.limit) searchParams.append('limit', String(params.limit));
+    if (params?.offset) searchParams.append('offset', String(params.offset));
+
+    const res = await fetchWithAuth(`${API_BASE}/api/bets/history?${searchParams}`);
+    if (!res.ok) throw new Error('Failed to get bet history');
     return res.json();
   },
 
