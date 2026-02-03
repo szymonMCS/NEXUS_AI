@@ -292,43 +292,60 @@ export const api = {
     return res.json();
   },
 
-  // WebSocket
+  // WebSocket with automatic reconnection
   connectWebSocket(onProgress: ProgressCallback): WebSocket {
     if (ws && ws.readyState === WebSocket.OPEN) {
       return ws;
     }
 
-    const wsUrl = API_BASE.replace('http', 'ws');
-    ws = new WebSocket(`${wsUrl}/api/ws`);
+    let reconnectAttempts = 0;
+    const maxReconnects = 5;
 
-    ws.onopen = () => {
-      console.log('WebSocket connected');
-    };
+    function connect(): WebSocket {
+      const wsUrl = API_BASE.replace('http', 'ws');
+      ws = new WebSocket(`${wsUrl}/api/ws`);
 
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        onProgress(data);
-      } catch (e) {
-        console.error('WebSocket message error:', e);
-      }
-    };
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        reconnectAttempts = 0;
+      };
 
-    ws.onclose = () => {
-      console.log('WebSocket disconnected');
-      ws = null;
-    };
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data !== 'pong') {
+            onProgress(data);
+          }
+        } catch (e) {
+          console.error('WebSocket message error:', e);
+        }
+      };
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+      ws.onclose = (event) => {
+        console.log('WebSocket disconnected', event.code);
+        ws = null;
+        // Auto-reconnect unless intentionally closed
+        if (event.code !== 1000 && event.code !== 1001 && reconnectAttempts < maxReconnects) {
+          reconnectAttempts++;
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+          console.log(`WebSocket reconnecting in ${delay}ms (attempt ${reconnectAttempts})`);
+          setTimeout(connect, delay);
+        }
+      };
 
-    return ws;
+      ws.onerror = () => {
+        // onclose will fire after this
+      };
+
+      return ws;
+    }
+
+    return connect();
   },
 
   disconnectWebSocket() {
     if (ws) {
-      ws.close();
+      ws.close(1000, 'Client disconnect');
       ws = null;
     }
   },

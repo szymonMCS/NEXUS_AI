@@ -500,10 +500,22 @@ async def get_upcoming_matches(sport: str, league: str = None) -> List[Dict]:
             # Limit to avoid overwhelming the system
             fixtures = fixtures[:20]
             
-            # Add mock odds for now (in production would scrape actual odds)
+            # Try to scrape actual odds for each fixture
             for f in fixtures:
-                f['odds'] = {'home': 1.85, 'away': 1.95}
-            
+                if 'odds' not in f or not f['odds']:
+                    try:
+                        match_url = f.get('url', '')
+                        if match_url:
+                            odds_data = await scraper.get_odds(match_url)
+                            if odds_data:
+                                f['odds'] = odds_data
+                                continue
+                    except Exception:
+                        pass
+                    # Mark as unavailable instead of injecting fake odds
+                    f['odds'] = None
+                    f['odds_available'] = False
+
             return fixtures
             
     except Exception as e:

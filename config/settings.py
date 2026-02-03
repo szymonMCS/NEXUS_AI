@@ -1,11 +1,15 @@
 # config/settings.py
 import os
+import secrets
+import logging
 from pathlib import Path
 from typing import Optional, Literal, List
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, model_validator
 
 AppMode = Literal["lite", "pro"]
+
+logger = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
     """Centralna konfiguracja aplikacji NEXUS AI"""
@@ -65,8 +69,17 @@ class Settings(BaseSettings):
     MIN_EDGE_UNPOPULAR: float = 0.07
 
     # === SECURITY ===
-    SECRET_KEY: str = "nexus_secret_key_change_in_production"
-    CORS_ORIGINS: str = '["http://localhost:3000", "http://localhost:8000"]'
+    SECRET_KEY: str = ""
+    CORS_ORIGINS: str = '["http://localhost:3000", "http://localhost:5173", "http://localhost:8000"]'
+
+    @model_validator(mode="after")
+    def _ensure_secret_key(self):
+        """Auto-generate SECRET_KEY if not set or using insecure default."""
+        insecure = {"", "nexus_secret_key_change_in_production"}
+        if self.SECRET_KEY in insecure:
+            self.SECRET_KEY = secrets.token_urlsafe(64)
+            logger.warning("SECRET_KEY not configured - generated random key (not persistent across restarts)")
+        return self
 
     @property
     def get_cors_origins(self) -> List[str]:

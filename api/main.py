@@ -5,12 +5,17 @@ Provides REST API for React frontend.
 """
 
 import asyncio
+import logging
+import signal
+import time
+from collections import defaultdict
+from contextlib import asynccontextmanager
 from datetime import datetime, date
 from typing import List, Dict, Optional, Any
 from pathlib import Path
 import json
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks, Depends
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks, Depends, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,6 +32,14 @@ from core.models import (
     MarketType,
     find_value_handicap,
 )
+
+# === LOGGING SETUP ===
+logging.basicConfig(
+    level=getattr(logging, settings.LOG_LEVEL, logging.INFO),
+    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("nexus.api")
 
 
 # === PYDANTIC MODELS ===
@@ -91,12 +104,50 @@ class HandicapResponse(BaseModel):
     value_bets: Optional[List[Dict[str, Any]]] = None
 
 
+# === LIFESPAN (startup / shutdown) ===
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle application startup and shutdown."""
+    # --- STARTUP ---
+    logger.info("NEXUS AI v%s starting (mode=%s)", settings.APP_VERSION, settings.APP_MODE)
+
+    # Initialize database tables
+    try:
+        from database.db import init_db
+        init_db()
+        logger.info("Database initialized")
+    except Exception as e:
+        logger.error("Database initialization failed: %s", e)
+
+    # Validate configuration
+    is_valid, warnings = settings.validate_mode_requirements()
+    for w in warnings:
+        logger.warning("Config: %s", w)
+
+    yield  # --- APP RUNNING ---
+
+    # --- SHUTDOWN ---
+    logger.info("NEXUS AI shutting down...")
+
+    # Close all WebSocket connections gracefully
+    for conn in list(manager.active_connections):
+        try:
+            await conn.close(code=1001, reason="Server shutting down")
+        except Exception:
+            pass
+    manager.active_connections.clear()
+
+    logger.info("NEXUS AI shutdown complete")
+
+
 # === APP SETUP ===
 
 app = FastAPI(
     title="NEXUS AI Lite",
     description="Sports Prediction System - REST API",
-    version="2.2.0"
+    version="2.2.0",
+    lifespan=lifespan,
 )
 
 # Setup Prometheus metrics
@@ -104,17 +155,63 @@ try:
     from api.metrics import setup_metrics, set_websocket_connections, set_active_analyses
     setup_metrics(app, version="2.2.0")
 except ImportError:
-    # prometheus_client not installed
     pass
 
-# CORS for React frontend
+# CORS - configured from environment variable CORS_ORIGINS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
+    allow_origins=settings.get_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# === RATE LIMITING MIDDLEWARE ===
+
+_rate_limit_store: Dict[str, list] = defaultdict(list)
+RATE_LIMIT_MAX = 60          # requests
+RATE_LIMIT_WINDOW = 60       # seconds
+RATE_LIMIT_ANALYSIS_MAX = 5  # analysis requests per window
+
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    """Simple in-process rate limiter per client IP."""
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+
+    # Clean old entries
+    _rate_limit_store[client_ip] = [
+        t for t in _rate_limit_store[client_ip] if now - t < RATE_LIMIT_WINDOW
+    ]
+
+    # Skip rate limiting for health checks
+    if request.url.path in ("/health", "/docs", "/redoc", "/openapi.json"):
+        return await call_next(request)
+
+    # Stricter limit for analysis endpoints
+    if request.url.path in ("/api/analysis", "/api/predictions/analyze"):
+        analysis_key = f"{client_ip}:analysis"
+        _rate_limit_store[analysis_key] = [
+            t for t in _rate_limit_store[analysis_key] if now - t < RATE_LIMIT_WINDOW
+        ]
+        if len(_rate_limit_store[analysis_key]) >= RATE_LIMIT_ANALYSIS_MAX:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Too many analysis requests. Please wait."},
+            )
+        _rate_limit_store[analysis_key].append(now)
+
+    # General limit
+    if len(_rate_limit_store[client_ip]) >= RATE_LIMIT_MAX:
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Rate limit exceeded. Please slow down."},
+        )
+
+    _rate_limit_store[client_ip].append(now)
+    return await call_next(request)
 
 # Register additional routers (ensemble, monitoring, admin)
 from api.routers import register_routers
@@ -149,11 +246,14 @@ class ConnectionManager:
             self.active_connections.remove(websocket)
 
     async def broadcast(self, message: dict):
+        disconnected = []
         for connection in self.active_connections:
             try:
                 await connection.send_json(message)
-            except:
-                pass
+            except (WebSocketDisconnect, RuntimeError, ConnectionError):
+                disconnected.append(connection)
+        for conn in disconnected:
+            self.disconnect(conn)
 
 
 manager = ConnectionManager()
@@ -182,6 +282,38 @@ async def get_status() -> Dict[str, Any]:
         "uptime_seconds": uptime,
         "version": settings.APP_VERSION,
     }
+
+
+@app.get("/health")
+async def health_check() -> Dict[str, Any]:
+    """Health check endpoint for Docker / load balancers."""
+    checks = {"api": True, "database": False, "redis": False}
+
+    # Database check
+    try:
+        from database.db import get_db_session
+        from sqlalchemy import text
+        with get_db_session() as db:
+            db.execute(text("SELECT 1"))
+        checks["database"] = True
+    except Exception as e:
+        logger.warning("Health check - DB failed: %s", e)
+
+    # Redis check
+    try:
+        import redis
+        r = redis.from_url(settings.REDIS_URL, socket_timeout=2)
+        r.ping()
+        checks["redis"] = True
+    except Exception:
+        # Redis is optional - don't log as error
+        pass
+
+    healthy = checks["api"] and checks["database"]
+    return JSONResponse(
+        status_code=200 if healthy else 503,
+        content={"status": "healthy" if healthy else "degraded", "checks": checks},
+    )
 
 
 @app.post("/api/analysis")
@@ -253,16 +385,28 @@ async def _run_analysis_task(
     min_quality: float,
     top_n: int
 ):
-    """Background task for running analysis."""
+    """Background task for running analysis with data persistence."""
     analysis_state["is_running"] = True
     analysis_state["progress"] = 0
 
     try:
-        # Import here to avoid circular imports
         from betting_floor import run_betting_analysis
+        from data.persistence import DataPersistenceService
 
-        # Step 1: Starting
+        persistence = DataPersistenceService()
+
+        # Step 1: Collect fixtures and save to DB
         await _broadcast_progress("collecting", 10, "Collecting fixtures...")
+
+        try:
+            from data.collectors.fixture_collector import FixtureCollector
+            collector = FixtureCollector()
+            fixtures = await collector.collect_fixtures(sport, target_date)
+            if fixtures:
+                saved = persistence.save_fixtures(fixtures, sport)
+                logger.info("Saved %d fixtures to database", saved)
+        except Exception as e:
+            logger.warning("Fixture collection/save failed: %s", e)
 
         # Step 2: Run analysis
         await _broadcast_progress("analyzing", 30, "Analyzing matches...")
@@ -273,10 +417,9 @@ async def _run_analysis_task(
             bankroll=settings.DEFAULT_BANKROLL
         )
 
-        # Step 3: Processing results
+        # Step 3: Processing results and saving to DB
         await _broadcast_progress("processing", 70, "Processing results...")
 
-        # Format results for frontend
         value_bets = []
         if result and result.get("approved_bets"):
             for i, bet in enumerate(result["approved_bets"][:top_n], 1):
@@ -308,6 +451,7 @@ async def _run_analysis_task(
         await _broadcast_progress("complete", 100, "Analysis complete!", value_bets)
 
     except Exception as e:
+        logger.error("Analysis task failed: %s", e, exc_info=True)
         await _broadcast_progress("error", 0, f"Error: {str(e)}")
     finally:
         analysis_state["is_running"] = False
@@ -374,33 +518,165 @@ async def get_matches(
     sport: str = "tennis",
     match_date: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Get matches for a given sport and date."""
+    """Get matches for a given sport and date from database."""
     target_date = match_date or str(date.today())
 
-    # This would call the fixture collector
-    # For now, return placeholder
-    return {
-        "status": "success",
-        "sport": sport,
-        "date": target_date,
-        "matches": [],
-        "message": "Use /api/analysis to run full analysis"
-    }
+    # Try to return matches from database first
+    try:
+        from database.db import get_db_session
+        from database.models import Match as DBMatch
+        from sqlalchemy import cast, Date
+
+        with get_db_session() as db:
+            query = db.query(DBMatch).filter(
+                DBMatch.sport == sport
+            )
+            # Filter by date if start_time exists
+            matches_db = query.order_by(DBMatch.start_time.desc()).limit(50).all()
+
+            matches_list = []
+            for m in matches_db:
+                match_date_str = m.start_time.strftime("%Y-%m-%d %H:%M") if m.start_time else ""
+                if target_date and m.start_time and m.start_time.strftime("%Y-%m-%d") != target_date:
+                    continue
+                matches_list.append({
+                    "id": m.id,
+                    "external_id": m.external_id,
+                    "home_team": m.home_team,
+                    "away_team": m.away_team,
+                    "league": m.league,
+                    "start_time": match_date_str,
+                    "is_live": m.is_live,
+                    "is_finished": m.is_finished,
+                    "home_score": m.home_score,
+                    "away_score": m.away_score,
+                    "quality_score": m.quality_score,
+                })
+
+            return {
+                "status": "success",
+                "sport": sport,
+                "date": target_date,
+                "matches": matches_list,
+                "total": len(matches_list),
+            }
+    except Exception as e:
+        logger.warning("Could not fetch matches from DB: %s", e)
+        return {
+            "status": "success",
+            "sport": sport,
+            "date": target_date,
+            "matches": [],
+            "total": 0,
+            "message": "No matches in database. Run /api/analysis to collect and analyze matches.",
+        }
 
 
 @app.get("/api/stats")
 async def get_stats() -> Dict[str, Any]:
-    """Get system statistics for dashboard."""
-    return {
-        "total_analyses": 0,  # TODO: Track in database
-        "successful_bets": 0,
-        "win_rate": 0.0,
-        "total_profit": 0.0,
-        "avg_edge": 0.0,
-        "avg_quality": 0.0,
-        "sports_analyzed": ["tennis", "basketball", "greyhound", "handball", "table_tennis"],
-        "last_7_days": []
-    }
+    """Get system statistics for dashboard from database."""
+    try:
+        from database.db import get_db_session
+        from database.crud import get_performance_summary, get_roi_by_sport
+
+        with get_db_session() as db:
+            summary = get_performance_summary(db, days=30)
+            roi_by_sport = get_roi_by_sport(db, days=30)
+
+        return {
+            "total_analyses": summary.get("total_bets", 0),
+            "successful_bets": summary.get("winning_bets", 0),
+            "win_rate": round(summary.get("win_rate", 0), 2),
+            "total_profit": round(summary.get("total_profit", 0), 2),
+            "roi": round(summary.get("roi", 0), 2),
+            "avg_edge": round(summary.get("avg_profit_per_bet", 0), 2),
+            "roi_by_sport": roi_by_sport,
+            "sports_analyzed": list(roi_by_sport.keys()) or ["tennis", "basketball", "football"],
+            "last_7_days": [],
+        }
+    except Exception as e:
+        logger.warning("Could not fetch stats from DB: %s", e)
+        return {
+            "total_analyses": 0,
+            "successful_bets": 0,
+            "win_rate": 0.0,
+            "total_profit": 0.0,
+            "roi": 0.0,
+            "avg_edge": 0.0,
+            "roi_by_sport": {},
+            "sports_analyzed": ["tennis", "basketball", "football"],
+            "last_7_days": [],
+        }
+
+
+@app.post("/api/collect")
+async def collect_fixtures(
+    request: AnalysisRequest,
+    background_tasks: BackgroundTasks,
+) -> Dict[str, Any]:
+    """Collect and save fixtures to database without running full analysis."""
+    target_date = request.date or str(date.today())
+
+    async def _collect_task(sport: str, target_date: str):
+        try:
+            from data.collectors.fixture_collector import FixtureCollector
+            from data.persistence import DataPersistenceService
+
+            collector = FixtureCollector()
+            fixtures = await collector.collect_fixtures(sport, target_date)
+            persistence = DataPersistenceService()
+            saved = persistence.save_fixtures(fixtures, sport)
+            logger.info("Collected %d fixtures, saved %d new (sport=%s)", len(fixtures), saved, sport)
+        except Exception as e:
+            logger.error("Collection failed: %s", e)
+
+    background_tasks.add_task(_collect_task, request.sport, target_date)
+    return {"status": "collecting", "sport": request.sport, "date": target_date}
+
+
+@app.post("/api/results/check")
+async def check_results(background_tasks: BackgroundTasks) -> Dict[str, Any]:
+    """Check and update results for finished matches. Settles pending bets."""
+
+    async def _check_results():
+        try:
+            from data.persistence import DataPersistenceService
+            from data.apis.thesportsdb_client import TheSportsDBClient
+
+            persistence = DataPersistenceService()
+            unfinished_ids = persistence.get_unfinished_match_ids()
+
+            if not unfinished_ids:
+                logger.info("No unfinished matches to check")
+                return
+
+            logger.info("Checking results for %d matches", len(unfinished_ids))
+
+            # Try to get results from TheSportsDB
+            client = TheSportsDBClient()
+            results = []
+
+            for ext_id in unfinished_ids[:20]:  # Limit to avoid rate limiting
+                try:
+                    event = await client.get_event_by_id(ext_id)
+                    if event and event.get("intHomeScore") is not None:
+                        results.append({
+                            "external_id": ext_id,
+                            "home_score": int(event["intHomeScore"]),
+                            "away_score": int(event["intAwayScore"]),
+                        })
+                except Exception:
+                    pass
+
+            if results:
+                updated = persistence.update_results(results)
+                logger.info("Updated %d match results, settled bets", updated)
+
+        except Exception as e:
+            logger.error("Results check failed: %s", e)
+
+    background_tasks.add_task(_check_results)
+    return {"status": "checking", "message": "Checking results for unfinished matches"}
 
 
 @app.get("/api/forebet/predictions")
@@ -453,8 +729,8 @@ async def get_forebet_predictions_simple(
             }
             
     except Exception as e:
-        # Return mock data if scraper fails
-        logger.warning(f"Forebet scraper failed: {e}, returning mock data")
+        # Return status indicating scraper unavailable
+        logger.warning("Forebet scraper failed: %s, returning demo data", e)
         return {
             "status": "mock",
             "source": "mock",
