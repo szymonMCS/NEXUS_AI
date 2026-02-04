@@ -243,9 +243,12 @@ class BettorAgent:
                     f"FAILED: {bet.match_name} - Could not place bet"
                 )
 
-        # Update session bankroll
+        # Calculate total staked amount
         total_staked = sum(b.stake for b in placed_bets)
-        self.session.current_bankroll = state.current_bankroll - total_staked
+        
+        # Update session bankroll - only subtract staked amount from starting bankroll
+        # Do NOT modify current_bankroll here - it will be updated when bets are settled
+        self.session.current_bankroll = self.session.starting_bankroll - total_staked
 
         # Summary
         state = add_message(
@@ -339,15 +342,23 @@ class BettorAgent:
         bet.status = BetStatus.WON if won else BetStatus.LOST
         bet.settled_at = datetime.now()
 
-        # Calculate profit/loss
+        # Calculate profit/loss (net profit/loss, stake is already accounted for)
         if won:
+            # Win: profit = stake * (odds - 1), bankroll increases by stake + profit
             bet.profit_loss = bet.stake * (bet.odds - 1)
+            bankroll_change = bet.stake + bet.profit_loss  # Return stake + winnings
         else:
+            # Loss: profit_loss = -stake (stake already deducted from bankroll)
             bet.profit_loss = -bet.stake
+            bankroll_change = 0  # Stake was already deducted, no change
 
         # Update session bankroll if active
+        # Only add the winnings (not stake again since it was already deducted when placed)
         if self.session:
-            self.session.current_bankroll += bet.stake + bet.profit_loss
+            if won:
+                # Add back the stake + winnings
+                self.session.current_bankroll += bankroll_change
+            # If lost, bankroll already reflects the loss (stake was deducted when placed)
 
         logger.info(f"Bet settled: {bet_id} - {'WON' if won else 'LOST'} (P/L: ${bet.profit_loss:.2f})")
         return bet

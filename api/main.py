@@ -125,10 +125,30 @@ async def lifespan(app: FastAPI):
     for w in warnings:
         logger.warning("Config: %s", w)
 
+    # Start the analysis scheduler
+    scheduler = None
+    try:
+        from core.scheduler import get_scheduler, default_analysis_function
+        scheduler = get_scheduler()
+        scheduler.set_analysis_callback(default_analysis_function)
+        import asyncio
+        asyncio.create_task(scheduler.start())
+        logger.info("Analysis scheduler started")
+    except Exception as e:
+        logger.warning("Scheduler startup failed (non-critical): %s", e)
+
     yield  # --- APP RUNNING ---
 
     # --- SHUTDOWN ---
     logger.info("NEXUS AI shutting down...")
+
+    # Stop the scheduler
+    if scheduler is not None:
+        try:
+            await scheduler.stop()
+            logger.info("Analysis scheduler stopped")
+        except Exception as e:
+            logger.warning("Scheduler stop error: %s", e)
 
     # Close all WebSocket connections gracefully
     for conn in list(manager.active_connections):

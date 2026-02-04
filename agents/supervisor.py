@@ -179,20 +179,23 @@ class SupervisorAgent:
         self,
         sport: str,
         date: str,
-        bankroll: float = 1000.0
+        bankroll: float = 1000.0,
+        timeout_seconds: int = 300
     ) -> NexusState:
         """
-        Run the complete betting analysis workflow.
+        Run the complete betting analysis workflow with error handling and timeout.
 
         Args:
             sport: Sport to analyze (tennis, basketball)
             date: Date to analyze (YYYY-MM-DD)
             bankroll: Current bankroll amount
+            timeout_seconds: Maximum time to wait for workflow completion
 
         Returns:
             Final workflow state with recommendations
         """
         from core.state import Sport
+        import asyncio
 
         # Initialize state
         initial_state = NexusState(
@@ -202,13 +205,47 @@ class SupervisorAgent:
             started_at=datetime.now()
         )
 
-        # Create and run workflow
-        workflow = self.create_workflow()
+        try:
+            # Create and run workflow with timeout
+            workflow = self.create_workflow()
 
-        # Execute workflow
-        final_state = await workflow.ainvoke(initial_state)
+            # Execute workflow with timeout protection
+            final_state = await asyncio.wait_for(
+                workflow.ainvoke(initial_state),
+                timeout=timeout_seconds
+            )
 
-        return final_state
+            # Mark as completed
+            final_state.completed_at = datetime.now()
+            
+            # Add completion message
+            final_state = add_message(
+                final_state,
+                "supervisor",
+                f"Workflow completed successfully in {(final_state.completed_at - final_state.started_at).total_seconds():.1f}s"
+            )
+
+            return final_state
+
+        except asyncio.TimeoutError:
+            logger.error(f"Workflow timeout after {timeout_seconds}s")
+            initial_state.completed_at = datetime.now()
+            initial_state = add_message(
+                initial_state,
+                "supervisor",
+                f"ERROR: Workflow timeout after {timeout_seconds} seconds"
+            )
+            return initial_state
+            
+        except Exception as e:
+            logger.error(f"Workflow failed: {str(e)}", exc_info=True)
+            initial_state.completed_at = datetime.now()
+            initial_state = add_message(
+                initial_state,
+                "supervisor",
+                f"ERROR: Workflow failed - {str(e)}"
+            )
+            return initial_state
 
 
 # === HELPER FUNCTIONS ===

@@ -71,10 +71,70 @@ export interface SystemStats {
   successful_bets: number;
   win_rate: number;
   total_profit: number;
+  roi: number;
   avg_edge: number;
   avg_quality: number;
+  roi_by_sport: Record<string, { win_rate: number; roi: number; total_bets: number; profit: number }>;
   sports_analyzed: string[];
   last_7_days: Array<{ date: string; profit: number }>;
+}
+
+// API Match (from /api/matches)
+export interface ApiMatch {
+  id: number;
+  external_id: string;
+  home_team: string;
+  away_team: string;
+  league: string;
+  start_time: string;
+  is_live: boolean;
+  is_finished: boolean;
+  home_score: number | null;
+  away_score: number | null;
+  quality_score: number | null;
+}
+
+export interface MatchesResponse {
+  status: string;
+  sport: string;
+  date: string;
+  matches: ApiMatch[];
+  total: number;
+  message?: string;
+}
+
+// ML types
+export interface MlModelInfo {
+  name: string;
+  version: string;
+  type: string;
+  accuracy: number | null;
+  created: string | null;
+}
+
+export interface MlStatusResponse {
+  status: string;
+  ml_status: Record<string, {
+    models_available: number;
+    models: MlModelInfo[];
+  }>;
+}
+
+export interface EnsembleStatusResponse {
+  status: string;
+  ensemble_status: Record<string, {
+    available_models: number;
+    ensemble_enabled: boolean;
+    primary_model: string;
+    model_rankings: Record<string, number>;
+  }>;
+}
+
+export interface EnsembleRankingsResponse {
+  sport: string;
+  rankings: Record<string, number>;
+  primary_model: string;
+  total_models: number;
 }
 
 // Handicap types
@@ -255,9 +315,9 @@ export const api = {
   },
 
   // Matches
-  async getMatches(sport: string, date?: string): Promise<{ matches: unknown[] }> {
+  async getMatches(sport: string, date?: string): Promise<MatchesResponse> {
     const params = new URLSearchParams({ sport });
-    if (date) params.append('date', date);
+    if (date) params.append('match_date', date);
 
     const res = await fetchWithAuth(`${API_BASE}/api/matches?${params}`);
     if (!res.ok) throw new Error('Failed to get matches');
@@ -324,6 +384,25 @@ export const api = {
 
     const res = await fetchWithAuth(`${API_BASE}/api/bets/history?${searchParams}`);
     if (!res.ok) throw new Error('Failed to get bet history');
+    return res.json();
+  },
+
+  // ML Status
+  async getMlStatus(): Promise<MlStatusResponse> {
+    const res = await fetchWithAuth(`${API_BASE}/api/ml/status`);
+    if (!res.ok) throw new Error('Failed to get ML status');
+    return res.json();
+  },
+
+  async getEnsembleStatus(): Promise<EnsembleStatusResponse> {
+    const res = await fetchWithAuth(`${API_BASE}/api/ml/ensemble/status`);
+    if (!res.ok) throw new Error('Failed to get ensemble status');
+    return res.json();
+  },
+
+  async getEnsembleRankings(sport: string): Promise<EnsembleRankingsResponse> {
+    const res = await fetchWithAuth(`${API_BASE}/api/ml/ensemble/rankings/${sport}`);
+    if (!res.ok) throw new Error('Failed to get ensemble rankings');
     return res.json();
   },
 

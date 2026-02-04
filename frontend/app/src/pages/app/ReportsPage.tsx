@@ -1,17 +1,12 @@
 /**
  * ReportsPage - Comprehensive analytical reports and summaries
- * 
- * Features:
- * - Prediction summaries with confidence scores
- * - Key influencing factors
- * - Similar historical matches
- * - Win rate and ROI analysis
- * - Model accuracy metrics
- * - Daily/weekly/monthly performance
- * - Automatic insight generation
+ *
+ * Connected to real API:
+ * - /api/stats for KPI data and sport performance
+ * - /api/bets/history for recent predictions
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PageLayout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,14 +26,6 @@ import {
   CartesianGrid,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
   ComposedChart,
   Bar,
 } from 'recharts';
@@ -50,101 +37,27 @@ import {
   Clock,
   Download,
   Lightbulb,
+  Loader2,
   PieChart as PieChartIcon,
   Target,
   TrendingUp,
   Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-// Mock data for reports
-const dailyPerformance = [
-  { date: 'Mon', predictions: 12, wins: 8, roi: 15.2 },
-  { date: 'Tue', predictions: 15, wins: 9, roi: 8.5 },
-  { date: 'Wed', predictions: 10, wins: 7, roi: 22.1 },
-  { date: 'Thu', predictions: 18, wins: 10, roi: -5.3 },
-  { date: 'Fri', predictions: 14, wins: 9, roi: 12.8 },
-  { date: 'Sat', predictions: 22, wins: 15, roi: 28.4 },
-  { date: 'Sun', predictions: 20, wins: 13, roi: 18.9 },
-];
-
-const modelAccuracy = [
-  { metric: 'Precision', value: 72, fullMark: 100 },
-  { metric: 'Recall', value: 68, fullMark: 100 },
-  { metric: 'F1 Score', value: 70, fullMark: 100 },
-  { metric: 'Calibration', value: 85, fullMark: 100 },
-  { metric: 'ROI', value: 78, fullMark: 100 },
-  { metric: 'Consistency', value: 82, fullMark: 100 },
-];
-
-const predictionBreakdown = [
-  { name: 'High Confidence', value: 45, color: '#00ff88' },
-  { name: 'Medium Confidence', value: 35, color: '#00d4ff' },
-  { name: 'Low Confidence', value: 20, color: '#ff9500' },
-];
-
-const sportPerformance = [
-  { sport: 'Football', predictions: 156, winRate: 68.5, roi: 15.2, avgOdds: 1.85 },
-  { sport: 'Basketball', predictions: 89, winRate: 62.1, roi: 8.7, avgOdds: 1.72 },
-  { sport: 'Tennis', predictions: 67, winRate: 71.2, roi: 22.4, avgOdds: 1.68 },
-  { sport: 'Hockey', predictions: 45, winRate: 58.9, roi: 3.2, avgOdds: 1.90 },
-  { sport: 'Baseball', predictions: 34, winRate: 61.8, roi: 6.5, avgOdds: 1.78 },
-];
-
-const recentPredictions = [
-  { id: 1, match: 'Man City vs Arsenal', prediction: 'Home Win', confidence: 82, result: 'WIN', odds: 1.65, profit: '+6.5%', date: '2h ago' },
-  { id: 2, match: 'Lakers vs Warriors', prediction: 'Away Win', confidence: 65, result: 'LOSS', odds: 1.75, profit: '-10.0%', date: '4h ago' },
-  { id: 3, match: 'Real vs Barcelona', prediction: 'Draw', confidence: 58, result: 'WIN', odds: 3.40, profit: '+24.0%', date: '6h ago' },
-  { id: 4, match: 'Alcaraz vs Djokovic', prediction: 'Home Win', confidence: 71, result: 'WIN', odds: 1.85, profit: '+8.5%', date: '8h ago' },
-  { id: 5, match: 'Celtics vs Heat', prediction: 'Home Win', confidence: 78, result: 'PENDING', odds: 1.45, profit: '-', date: 'Upcoming' },
-];
-
-const insights = [
-  {
-    type: 'positive' as const,
-    title: 'Strong Tennis Performance',
-    description: 'Tennis predictions showing 71.2% win rate with +22.4% ROI. Model excelling on ATP matches.',
-    action: 'Review Model',
-  },
-  {
-    type: 'warning' as const,
-    title: 'Hockey Underperformance',
-    description: 'Hockey predictions below expectations at 58.9% win rate. Consider reducing stake size.',
-    action: 'Adjust Strategy',
-  },
-  {
-    type: 'info' as const,
-    title: 'High Confidence Streak',
-    description: 'High confidence predictions (80%+) on a 7-win streak. Edge detection working well.',
-    action: 'View Details',
-  },
-  {
-    type: 'positive' as const,
-    title: 'Weekend Performance',
-    description: 'Saturday showing exceptional results with 28.4% ROI. Market inefficiencies detected.',
-    action: 'Analyze',
-  },
-];
-
-const similarMatches = [
-  { match: 'Liverpool vs Man Utd', date: '2024-01-15', prediction: 'Home Win', actual: 'Home Win', odds: 1.72, similarity: 92 },
-  { match: 'Chelsea vs Arsenal', date: '2024-01-08', prediction: 'Draw', actual: 'Draw', odds: 3.20, similarity: 88 },
-  { match: 'Spurs vs City', date: '2023-12-20', prediction: 'Away Win', actual: 'Away Win', odds: 1.55, similarity: 85 },
-  { match: 'Newcastle vs Brighton', date: '2023-12-15', prediction: 'Home Win', actual: 'Home Win', odds: 1.90, similarity: 81 },
-];
+import api, { type BetHistoryItem, type SystemStats } from '@/lib/api';
 
 // Helper components
-const KPICard = ({ 
-  title, 
-  value, 
+const KPICard = ({
+  title,
+  value,
   change,
   changeType = 'neutral',
   icon: Icon,
-  description 
-}: { 
-  title: string; 
-  value: string; 
-  change?: string; 
+  description,
+}: {
+  title: string;
+  value: string;
+  change?: string;
   changeType?: 'positive' | 'negative' | 'neutral';
   icon: React.ComponentType<{ className?: string }>;
   description?: string;
@@ -161,7 +74,7 @@ const KPICard = ({
               {changeType === 'negative' && <TrendingUp className="w-4 h-4 text-[#ff3860] rotate-180" />}
               <span className={cn(
                 'text-sm font-medium',
-                changeType === 'positive' ? 'text-[#00ff88]' : 
+                changeType === 'positive' ? 'text-[#00ff88]' :
                 changeType === 'negative' ? 'text-[#ff3860]' : 'text-gray-400'
               )}>
                 {change}
@@ -182,7 +95,6 @@ interface InsightItem {
   type: 'positive' | 'warning' | 'info';
   title: string;
   description: string;
-  action: string;
 }
 
 const InsightCard = ({ insight }: { insight: InsightItem }) => {
@@ -191,7 +103,7 @@ const InsightCard = ({ insight }: { insight: InsightItem }) => {
     warning: { bg: 'bg-[#ff9500]/10', border: 'border-[#ff9500]/20', icon: AlertTriangle, iconColor: 'text-[#ff9500]' },
     info: { bg: 'bg-[#00d4ff]/10', border: 'border-[#00d4ff]/20', icon: Lightbulb, iconColor: 'text-[#00d4ff]' },
   };
-  
+
   const style = colors[insight.type];
   const Icon = style.icon;
 
@@ -203,9 +115,6 @@ const InsightCard = ({ insight }: { insight: InsightItem }) => {
           <div className="flex-1">
             <h4 className="font-medium text-white">{insight.title}</h4>
             <p className="text-sm text-gray-400 mt-1">{insight.description}</p>
-            <Button variant="link" size="sm" className="text-[#00d4ff] p-0 h-auto mt-2">
-              {insight.action} →
-            </Button>
           </div>
         </div>
       </CardContent>
@@ -213,8 +122,130 @@ const InsightCard = ({ insight }: { insight: InsightItem }) => {
   );
 };
 
+// Generate insights from real stats
+function generateInsights(stats: SystemStats): InsightItem[] {
+  const insights: InsightItem[] = [];
+
+  if (stats.win_rate >= 60) {
+    insights.push({
+      type: 'positive',
+      title: 'Strong Win Rate',
+      description: `Overall win rate of ${stats.win_rate}% across all sports. Model performing above expectations.`,
+    });
+  } else if (stats.win_rate > 0) {
+    insights.push({
+      type: 'warning',
+      title: 'Win Rate Below Target',
+      description: `Current win rate is ${stats.win_rate}%. Consider adjusting minimum quality thresholds.`,
+    });
+  }
+
+  if (stats.total_profit > 0) {
+    insights.push({
+      type: 'positive',
+      title: 'Profitable Performance',
+      description: `Total profit of ${stats.total_profit.toFixed(2)} units with ${stats.roi}% ROI.`,
+    });
+  } else if (stats.total_profit < 0) {
+    insights.push({
+      type: 'warning',
+      title: 'Negative P/L',
+      description: `Currently at ${stats.total_profit.toFixed(2)} units. Review stake sizing and selection criteria.`,
+    });
+  }
+
+  if (stats.roi_by_sport) {
+    const bestSport = Object.entries(stats.roi_by_sport)
+      .filter(([, v]) => v.total_bets > 0)
+      .sort(([, a], [, b]) => b.roi - a.roi)[0];
+    if (bestSport) {
+      insights.push({
+        type: 'info',
+        title: `Best Sport: ${bestSport[0].charAt(0).toUpperCase() + bestSport[0].slice(1)}`,
+        description: `${bestSport[1].roi.toFixed(1)}% ROI with ${bestSport[1].win_rate.toFixed(0)}% win rate from ${bestSport[1].total_bets} bets.`,
+      });
+    }
+  }
+
+  if (stats.total_analyses > 50) {
+    insights.push({
+      type: 'info',
+      title: 'Sufficient Sample Size',
+      description: `${stats.total_analyses} total predictions provide reliable performance metrics.`,
+    });
+  }
+
+  return insights.length > 0 ? insights : [{
+    type: 'info',
+    title: 'Getting Started',
+    description: 'Run analyses to generate performance insights. More data leads to better insights.',
+  }];
+}
+
 export function ReportsPage() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<SystemStats | null>(null);
+  const [recentBets, setRecentBets] = useState<BetHistoryItem[]>([]);
+  const [sportPerformance, setSportPerformance] = useState<Array<{
+    sport: string;
+    predictions: number;
+    winRate: number;
+    roi: number;
+  }>>([]);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [statsRes, historyRes] = await Promise.allSettled([
+        api.getStats(),
+        api.getBetHistory({ limit: 10, days: 30 }),
+      ]);
+
+      if (statsRes.status === 'fulfilled') {
+        const s = statsRes.value;
+        setStats(s);
+
+        // Build sport performance from roi_by_sport
+        if (s.roi_by_sport) {
+          const perf = Object.entries(s.roi_by_sport).map(([sport, data]) => ({
+            sport: sport.charAt(0).toUpperCase() + sport.slice(1),
+            predictions: data.total_bets || 0,
+            winRate: data.win_rate || 0,
+            roi: data.roi || 0,
+          }));
+          setSportPerformance(perf);
+        }
+      }
+
+      if (historyRes.status === 'fulfilled') {
+        setRecentBets(historyRes.value.bets);
+      }
+    } catch (e) {
+      console.error('Failed to fetch report data:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const insights = stats ? generateInsights(stats) : [];
+
+  // Build daily performance from bet history
+  const dailyPerformance = recentBets
+    .filter(b => b.status !== 'pending' && b.created_at)
+    .reduce<Record<string, { date: string; predictions: number; wins: number }>>((acc, bet) => {
+      const day = new Date(bet.created_at).toLocaleDateString('en-US', { weekday: 'short' });
+      if (!acc[day]) acc[day] = { date: day, predictions: 0, wins: 0 };
+      acc[day].predictions++;
+      if (bet.status === 'won') acc[day].wins++;
+      return acc;
+    }, {});
+
+  const dailyData = Object.values(dailyPerformance);
 
   return (
     <PageLayout
@@ -222,46 +253,50 @@ export function ReportsPage() {
       description="Comprehensive performance analysis and predictive insights"
       breadcrumbs={[{ label: 'Reports' }]}
       actions={
-        <Button variant="outline" className="border-white/10 text-gray-400">
+        <Button variant="outline" className="border-white/10 text-gray-400" disabled>
           <Download className="w-4 h-4 mr-2" />
           Export Report
         </Button>
       }
     >
       <div className="space-y-6">
+        {/* Loading */}
+        {loading && (
+          <div className="flex items-center gap-2 text-gray-500 text-sm">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Loading reports...
+          </div>
+        )}
+
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <KPICard
             title="Total Predictions"
-            value="391"
-            change="+12% vs last week"
-            changeType="positive"
+            value={String(stats?.total_analyses || 0)}
+            changeType={stats && stats.total_analyses > 0 ? 'positive' : 'neutral'}
             icon={Target}
             description="Last 30 days"
           />
           <KPICard
             title="Win Rate"
-            value="66.2%"
-            change="+3.5% vs last week"
-            changeType="positive"
+            value={`${stats?.win_rate || 0}%`}
+            changeType={stats && stats.win_rate >= 55 ? 'positive' : stats && stats.win_rate > 0 ? 'negative' : 'neutral'}
             icon={Zap}
-            description="259 wins / 132 losses"
+            description={`${stats?.successful_bets || 0} wins / ${(stats?.total_analyses || 0) - (stats?.successful_bets || 0)} losses`}
           />
           <KPICard
             title="Total ROI"
-            value="+14.8%"
-            change="+2.1% vs last week"
-            changeType="positive"
+            value={`${stats?.roi ? (stats.roi > 0 ? '+' : '') + stats.roi.toFixed(1) : '0'}%`}
+            changeType={stats && stats.roi > 0 ? 'positive' : stats && stats.roi < 0 ? 'negative' : 'neutral'}
             icon={TrendingUp}
             description="Cumulative return"
           />
           <KPICard
-            title="Avg. Confidence"
-            value="72.4%"
-            change="+1.2% vs last week"
-            changeType="positive"
+            title="Avg. Edge"
+            value={`${stats?.avg_edge ? stats.avg_edge.toFixed(1) : '0'}%`}
+            changeType="neutral"
             icon={Brain}
-            description="Model certainty"
+            description="Per prediction"
           />
         </div>
 
@@ -276,10 +311,6 @@ export function ReportsPage() {
               <TrendingUp className="w-4 h-4 mr-2" />
               Performance
             </TabsTrigger>
-            <TabsTrigger value="model" className="data-[state=active]:bg-[#00d4ff] data-[state=active]:text-black">
-              <Brain className="w-4 h-4 mr-2" />
-              Model Metrics
-            </TabsTrigger>
             <TabsTrigger value="history" className="data-[state=active]:bg-[#00d4ff] data-[state=active]:text-black">
               <Clock className="w-4 h-4 mr-2" />
               History
@@ -290,7 +321,7 @@ export function ReportsPage() {
           <TabsContent value="overview" className="mt-6 space-y-6">
             {/* Insights */}
             <div>
-              <h3 className="text-sm font-medium text-gray-400 mb-4">AI-Generated Insights</h3>
+              <h3 className="text-sm font-medium text-gray-400 mb-4">Insights</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {insights.map((insight, idx) => (
                   <InsightCard key={idx} insight={insight} />
@@ -299,199 +330,115 @@ export function ReportsPage() {
             </div>
 
             {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Daily Performance */}
-              <Card className="lg:col-span-2 bg-[#0f1623]/80 border-white/10">
+            {dailyData.length > 0 && (
+              <Card className="bg-[#0f1623]/80 border-white/10">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-[#00d4ff]" />
-                    Daily Performance
+                    Daily Activity
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[250px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={dailyPerformance}>
+                      <ComposedChart data={dailyData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                         <XAxis dataKey="date" stroke="#64748b" fontSize={12} />
-                        <YAxis yAxisId="left" stroke="#64748b" fontSize={12} />
-                        <YAxis yAxisId="right" orientation="right" stroke="#64748b" fontSize={12} />
+                        <YAxis stroke="#64748b" fontSize={12} />
                         <RechartsTooltip
                           contentStyle={{
                             backgroundColor: '#0f1623',
                             border: '1px solid rgba(255,255,255,0.1)',
                           }}
                         />
-                        <Bar yAxisId="left" dataKey="predictions" fill="rgba(0, 212, 255, 0.3)" />
+                        <Bar dataKey="predictions" fill="rgba(0, 212, 255, 0.3)" name="Predictions" />
+                        <Bar dataKey="wins" fill="rgba(0, 255, 136, 0.5)" name="Wins" />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Confidence Distribution */}
-              <Card className="bg-[#0f1623]/80 border-white/10">
-                <CardHeader>
-                  <CardTitle className="text-white text-base">Confidence Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[200px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={predictionBreakdown}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
-                          dataKey="value"
-                        >
-                          {predictionBreakdown.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <RechartsTooltip
-                          contentStyle={{
-                            backgroundColor: '#0f1623',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="space-y-2 mt-4">
-                    {predictionBreakdown.map((item) => (
-                      <div key={item.name} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                          <span className="text-sm text-gray-400">{item.name}</span>
-                        </div>
-                        <span className="text-sm font-medium text-white">{item.value}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            )}
 
             {/* Sport Performance */}
-            <Card className="bg-[#0f1623]/80 border-white/10">
-              <CardHeader>
-                <CardTitle className="text-white">Performance by Sport</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-white/10 hover:bg-transparent">
-                      <TableHead className="text-gray-500">Sport</TableHead>
-                      <TableHead className="text-gray-500">Predictions</TableHead>
-                      <TableHead className="text-gray-500">Win Rate</TableHead>
-                      <TableHead className="text-gray-500">ROI</TableHead>
-                      <TableHead className="text-gray-500">Avg Odds</TableHead>
-                      <TableHead className="text-gray-500">Grade</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sportPerformance.map((sport) => (
-                      <TableRow key={sport.sport} className="border-white/5 hover:bg-white/5">
-                        <TableCell className="font-medium text-white">{sport.sport}</TableCell>
-                        <TableCell className="text-gray-400">{sport.predictions}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                              <div
-                                className={cn(
-                                  'h-full rounded-full',
-                                  sport.winRate >= 65 ? 'bg-[#00ff88]' : 
-                                  sport.winRate >= 60 ? 'bg-[#00d4ff]' : 'bg-[#ff9500]'
-                                )}
-                                style={{ width: `${sport.winRate}%` }}
-                              />
-                            </div>
-                            <span className="text-sm text-gray-400">{sport.winRate}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className={cn(
-                            'font-bold',
-                            sport.roi > 0 ? 'text-[#00ff88]' : 'text-[#ff3860]'
-                          )}>
-                            {sport.roi > 0 ? '+' : ''}{sport.roi}%
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-gray-400">{sport.avgOdds}</TableCell>
-                        <TableCell>
-                          <Badge className={cn(
-                            'border-0',
-                            sport.roi >= 15 ? 'bg-[#00ff88]/20 text-[#00ff88]' :
-                            sport.roi >= 10 ? 'bg-[#00d4ff]/20 text-[#00d4ff]' :
-                            sport.roi >= 5 ? 'bg-[#ff9500]/20 text-[#ff9500]' :
-                            'bg-[#ff3860]/20 text-[#ff3860]'
-                          )}>
-                            {sport.roi >= 15 ? 'A+' : sport.roi >= 10 ? 'A' : sport.roi >= 5 ? 'B' : 'C'}
-                          </Badge>
-                        </TableCell>
+            {sportPerformance.length > 0 && (
+              <Card className="bg-[#0f1623]/80 border-white/10">
+                <CardHeader>
+                  <CardTitle className="text-white">Performance by Sport</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-white/10 hover:bg-transparent">
+                        <TableHead className="text-gray-500">Sport</TableHead>
+                        <TableHead className="text-gray-500">Predictions</TableHead>
+                        <TableHead className="text-gray-500">Win Rate</TableHead>
+                        <TableHead className="text-gray-500">ROI</TableHead>
+                        <TableHead className="text-gray-500">Grade</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {sportPerformance.map((sport) => (
+                        <TableRow key={sport.sport} className="border-white/5 hover:bg-white/5">
+                          <TableCell className="font-medium text-white">{sport.sport}</TableCell>
+                          <TableCell className="text-gray-400">{sport.predictions}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                  className={cn(
+                                    'h-full rounded-full',
+                                    sport.winRate >= 65 ? 'bg-[#00ff88]' :
+                                    sport.winRate >= 55 ? 'bg-[#00d4ff]' : 'bg-[#ff9500]'
+                                  )}
+                                  style={{ width: `${Math.min(sport.winRate, 100)}%` }}
+                                />
+                              </div>
+                              <span className="text-sm text-gray-400">{sport.winRate.toFixed(1)}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className={cn('font-bold', sport.roi > 0 ? 'text-[#00ff88]' : 'text-[#ff3860]')}>
+                              {sport.roi > 0 ? '+' : ''}{sport.roi.toFixed(1)}%
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={cn(
+                              'border-0',
+                              sport.roi >= 15 ? 'bg-[#00ff88]/20 text-[#00ff88]' :
+                              sport.roi >= 5 ? 'bg-[#00d4ff]/20 text-[#00d4ff]' :
+                              sport.roi >= 0 ? 'bg-[#ff9500]/20 text-[#ff9500]' :
+                              'bg-[#ff3860]/20 text-[#ff3860]'
+                            )}>
+                              {sport.roi >= 15 ? 'A+' : sport.roi >= 5 ? 'A' : sport.roi >= 0 ? 'B' : 'C'}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+
+            {!loading && sportPerformance.length === 0 && dailyData.length === 0 && (
+              <Card className="bg-[#0f1623]/80 border-white/10">
+                <CardContent className="p-12 text-center text-gray-500">
+                  <PieChartIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No performance data yet.</p>
+                  <p className="text-xs mt-1">Run analyses to generate reports and insights.</p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Performance Tab */}
           <TabsContent value="performance" className="mt-6 space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Similar Historical Matches */}
+              {/* Summary */}
               <Card className="bg-[#0f1623]/80 border-white/10">
                 <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-[#00d4ff]" />
-                    Similar Historical Matches
-                  </CardTitle>
-                  <CardDescription className="text-gray-400">
-                    Past matches with similar statistical profiles
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {similarMatches.map((match, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                        <div>
-                          <div className="text-sm font-medium text-white">{match.match}</div>
-                          <div className="text-xs text-gray-500">{match.date}</div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <div className="text-xs text-gray-500">Prediction</div>
-                            <div className="text-sm text-[#00d4ff]">{match.prediction}</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xs text-gray-500">Result</div>
-                            <Badge className={cn(
-                              'border-0',
-                              match.prediction === match.actual 
-                                ? 'bg-[#00ff88]/20 text-[#00ff88]' 
-                                : 'bg-[#ff3860]/20 text-[#ff3860]'
-                            )}>
-                              {match.prediction === match.actual ? 'WIN' : 'LOSS'}
-                            </Badge>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xs text-gray-500">Match</div>
-                            <div className="text-sm font-mono text-white">{match.similarity}%</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Streaks */}
-              <Card className="bg-[#0f1623]/80 border-white/10">
-                <CardHeader>
-                  <CardTitle className="text-white">Current Streaks</CardTitle>
+                  <CardTitle className="text-white">Performance Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="p-4 bg-[#00ff88]/10 border border-[#00ff88]/20 rounded-lg">
@@ -501,14 +448,14 @@ export function ReportsPage() {
                           <TrendingUp className="w-5 h-5 text-[#00ff88]" />
                         </div>
                         <div>
-                          <div className="font-medium text-white">Win Streak</div>
-                          <div className="text-sm text-gray-400">High confidence predictions</div>
+                          <div className="font-medium text-white">Win Rate</div>
+                          <div className="text-sm text-gray-400">Overall performance</div>
                         </div>
                       </div>
-                      <div className="text-3xl font-bold text-[#00ff88]">7</div>
+                      <div className="text-3xl font-bold text-[#00ff88]">{stats?.win_rate || 0}%</div>
                     </div>
                   </div>
-                  
+
                   <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -516,101 +463,65 @@ export function ReportsPage() {
                           <Target className="w-5 h-5 text-[#00d4ff]" />
                         </div>
                         <div>
-                          <div className="font-medium text-white">Profit Streak</div>
-                          <div className="text-sm text-gray-400">Consecutive profitable days</div>
+                          <div className="font-medium text-white">Total Profit</div>
+                          <div className="text-sm text-gray-400">Cumulative P/L</div>
                         </div>
                       </div>
-                      <div className="text-3xl font-bold text-[#00d4ff]">5</div>
+                      <div className={cn(
+                        'text-3xl font-bold',
+                        (stats?.total_profit || 0) >= 0 ? 'text-[#00ff88]' : 'text-[#ff3860]'
+                      )}>
+                        {(stats?.total_profit || 0) >= 0 ? '+' : ''}{(stats?.total_profit || 0).toFixed(1)}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="p-4 bg-[#ff9500]/10 border border-[#ff9500]/20 rounded-lg">
+                  <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#ff9500]/20 flex items-center justify-center">
-                          <AlertTriangle className="w-5 h-5 text-[#ff9500]" />
+                        <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                          <Zap className="w-5 h-5 text-[#ff9500]" />
                         </div>
                         <div>
-                          <div className="font-medium text-white">ROI Variance</div>
-                          <div className="text-sm text-gray-400">Standard deviation: 18.4%</div>
+                          <div className="font-medium text-white">ROI</div>
+                          <div className="text-sm text-gray-400">Return on investment</div>
                         </div>
                       </div>
-                      <div className="text-sm text-gray-400">Moderate</div>
+                      <div className={cn(
+                        'text-3xl font-bold',
+                        (stats?.roi || 0) >= 0 ? 'text-[#00d4ff]' : 'text-[#ff3860]'
+                      )}>
+                        {(stats?.roi || 0).toFixed(1)}%
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          </TabsContent>
 
-          {/* Model Metrics Tab */}
-          <TabsContent value="model" className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Sports breakdown */}
               <Card className="bg-[#0f1623]/80 border-white/10">
                 <CardHeader>
-                  <CardTitle className="text-white">Model Accuracy Radar</CardTitle>
+                  <CardTitle className="text-white">Sports Breakdown</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="h-[350px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RadarChart data={modelAccuracy}>
-                        <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                        <PolarAngleAxis dataKey="metric" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
-                        <Radar
-                          name="Current Model"
-                          dataKey="value"
-                          stroke="#00d4ff"
-                          strokeWidth={2}
-                          fill="#00d4ff"
-                          fillOpacity={0.3}
-                        />
-                        <RechartsTooltip
-                          contentStyle={{
-                            backgroundColor: '#0f1623',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                          }}
-                        />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-[#0f1623]/80 border-white/10">
-                <CardHeader>
-                  <CardTitle className="text-white">Calibration Analysis</CardTitle>
-                  <CardDescription className="text-gray-400">
-                    Predicted probability vs actual win rate
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {[
-                      { range: '90-100%', predicted: 95, actual: 94, accuracy: 99 },
-                      { range: '80-89%', predicted: 85, actual: 82, accuracy: 96 },
-                      { range: '70-79%', predicted: 75, actual: 72, accuracy: 96 },
-                      { range: '60-69%', predicted: 65, actual: 63, accuracy: 97 },
-                      { range: '50-59%', predicted: 55, actual: 52, accuracy: 95 },
-                    ].map((item) => (
-                      <div key={item.range} className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-400">Confidence {item.range}</span>
-                          <span className="text-white">{item.accuracy}% calibration</span>
-                        </div>
-                        <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-[#00d4ff] rounded-full"
-                            style={{ width: `${item.accuracy}%` }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span>Predicted: {item.predicted}%</span>
-                          <span>Actual: {item.actual}%</span>
-                        </div>
+                <CardContent className="space-y-4">
+                  {sportPerformance.length > 0 ? sportPerformance.map((sport) => (
+                    <div key={sport.sport} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+                      <div className="flex-1">
+                        <div className="text-white font-medium text-sm">{sport.sport}</div>
+                        <div className="text-xs text-gray-500">{sport.predictions} predictions</div>
                       </div>
-                    ))}
-                  </div>
+                      <div className="text-right">
+                        <div className={cn('font-bold', sport.roi > 0 ? 'text-[#00ff88]' : 'text-[#ff3860]')}>
+                          {sport.roi > 0 ? '+' : ''}{sport.roi.toFixed(1)}% ROI
+                        </div>
+                        <div className="text-xs text-gray-500">{sport.winRate.toFixed(0)}% win rate</div>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="text-center text-gray-500 p-6">
+                      <p className="text-sm">No sport data yet.</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -623,65 +534,58 @@ export function ReportsPage() {
                 <CardTitle className="text-white">Recent Predictions</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-white/10 hover:bg-transparent">
-                      <TableHead className="text-gray-500">Match</TableHead>
-                      <TableHead className="text-gray-500">Prediction</TableHead>
-                      <TableHead className="text-gray-500">Conf.</TableHead>
-                      <TableHead className="text-gray-500">Odds</TableHead>
-                      <TableHead className="text-gray-500">Result</TableHead>
-                      <TableHead className="text-gray-500">P/L</TableHead>
-                      <TableHead className="text-gray-500">Time</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentPredictions.map((pred) => (
-                      <TableRow key={pred.id} className="border-white/5 hover:bg-white/5">
-                        <TableCell className="font-medium text-white">{pred.match}</TableCell>
-                        <TableCell className="text-gray-300">{pred.prediction}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                              <div
-                                className={cn(
-                                  'h-full rounded-full',
-                                  pred.confidence >= 75 ? 'bg-[#00ff88]' :
-                                  pred.confidence >= 60 ? 'bg-[#00d4ff]' : 'bg-[#ff9500]'
-                                )}
-                                style={{ width: `${pred.confidence}%` }}
-                              />
-                            </div>
-                            <span className="text-xs text-gray-400">{pred.confidence}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-mono text-gray-300">{pred.odds}</TableCell>
-                        <TableCell>
-                          <Badge className={cn(
-                            'border-0',
-                            pred.result === 'WIN' ? 'bg-[#00ff88]/20 text-[#00ff88]' :
-                            pred.result === 'LOSS' ? 'bg-[#ff3860]/20 text-[#ff3860]' :
-                            'bg-[#ff9500]/20 text-[#ff9500]'
-                          )}>
-                            {pred.result === 'PENDING' && <Clock className="w-3 h-3 mr-1" />}
-                            {pred.result}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <span className={cn(
-                            'font-medium',
-                            pred.profit.startsWith('+') ? 'text-[#00ff88]' :
-                            pred.profit.startsWith('-') ? 'text-[#ff3860]' :
-                            'text-gray-400'
-                          )}>
-                            {pred.profit}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-gray-500 text-sm">{pred.date}</TableCell>
+                {recentBets.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-white/10 hover:bg-transparent">
+                        <TableHead className="text-gray-500">Match</TableHead>
+                        <TableHead className="text-gray-500">Selection</TableHead>
+                        <TableHead className="text-gray-500">Odds</TableHead>
+                        <TableHead className="text-gray-500">Result</TableHead>
+                        <TableHead className="text-gray-500">P/L</TableHead>
+                        <TableHead className="text-gray-500">Date</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {recentBets.map((bet) => (
+                        <TableRow key={bet.id} className="border-white/5 hover:bg-white/5">
+                          <TableCell className="font-medium text-white">{bet.match}</TableCell>
+                          <TableCell className="text-gray-300">{bet.selection}</TableCell>
+                          <TableCell className="font-mono text-gray-300">{bet.odds.toFixed(2)}</TableCell>
+                          <TableCell>
+                            <Badge className={cn(
+                              'border-0',
+                              bet.status === 'won' ? 'bg-[#00ff88]/20 text-[#00ff88]' :
+                              bet.status === 'lost' ? 'bg-[#ff3860]/20 text-[#ff3860]' :
+                              'bg-[#ff9500]/20 text-[#ff9500]'
+                            )}>
+                              {bet.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
+                              {bet.status.toUpperCase()}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className={cn(
+                              'font-medium',
+                              bet.profit_loss > 0 ? 'text-[#00ff88]' :
+                              bet.profit_loss < 0 ? 'text-[#ff3860]' : 'text-gray-400'
+                            )}>
+                              {bet.profit_loss > 0 ? '+' : ''}{bet.profit_loss.toFixed(2)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-gray-500 text-sm">
+                            {bet.created_at ? new Date(bet.created_at).toLocaleDateString() : '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="p-12 text-center text-gray-500">
+                    <Clock className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No prediction history yet.</p>
+                    <p className="text-xs mt-1">Results will appear here after bets are placed.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
